@@ -54,16 +54,24 @@ public class Main {
                     continue;
                 }
                 String path = tokens[1];
+                if (path.startsWith("~")) {
+                    String homeDir = System.getProperty("user.home");
+                    if (homeDir == null) {
+                        System.out.println("cd: Home directory not set");
+                        continue;
+                    }
+                    path = homeDir + path.substring(1); // Replace ~ with home directory
+                }
                 try {
                     Path resolvedPath;
                     if (path.startsWith("/")) { // Absolute path
-                        resolvedPath = Paths.get(path).normalize(); // Normalize absolute paths too
+                        resolvedPath = Paths.get(path).normalize();
                     } else { // Relative path
                         Path currentDir = Paths.get(System.getProperty("user.dir"));
-                        resolvedPath = currentDir.resolve(path).normalize(); // Resolve and normalize
+                        resolvedPath = currentDir.resolve(path).normalize();
                     }
 
-                    File directory = resolvedPath.toFile(); // Get the File object
+                    File directory = resolvedPath.toFile();
 
                     if (directory.exists() && directory.isDirectory()) {
                         System.setProperty("user.dir", directory.getAbsolutePath());
