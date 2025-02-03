@@ -53,7 +53,13 @@ public class Main {
                 }
                 String path = tokens[1];
                 try {
-                    File directory = new File(path);
+                    File directory;
+                    if (path.startsWith("/")) { // Absolute path
+                        directory = new File(path);
+                    } else { // Relative path
+                        String currentDir = System.getProperty("user.dir");
+                        directory = new File(currentDir, path);
+                    }
                     if (directory.exists() && directory.isDirectory()) {
                         System.setProperty("user.dir", directory.getAbsolutePath());
                     } else {
@@ -62,13 +68,11 @@ public class Main {
                 } catch (Exception e) {
                     System.out.println("cd: " + path + ": Invalid path");
                 }
-
             } else {
                 // Try to execute external commands
                 runExternalCommand(tokens);
             }
         }
-
         scanner.close(); // Close the scanner on exit
     }
 
