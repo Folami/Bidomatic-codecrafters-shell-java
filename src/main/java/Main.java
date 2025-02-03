@@ -1,21 +1,20 @@
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
         // Define built-in commands handled directly by the shell
-        Set<String> builtins = Set.of("echo", "exit", "type");
+        Set<String> builtins = Set.of("echo", "exit", "type", "pwd");
 
         while (true) {
             System.out.print("$ ");  // Display the shell prompt
             String input = scanner.nextLine().trim();  // Read user input and trim whitespace
 
-            if (input.isEmpty()) 
-                continue;  // Skip empty inputs
+            if (input.isEmpty()) continue;  // Skip empty inputs
 
             String[] tokens = input.split("\\s+"); // Tokenize input by spaces
             String command = tokens[0];  // Extract the command name
@@ -25,6 +24,9 @@ public class Main {
             } else if (command.equals("echo")) {
                 // Print everything after "echo "
                 System.out.println(input.substring(5));
+            } else if (command.equals("pwd")) {
+                // Print current working directory
+                System.out.println(System.getProperty("user.dir"));
             } else if (command.equals("type")) {
                 // Handle "type" command: check if built-in or an external executable
                 if (tokens.length < 2) {
@@ -47,6 +49,7 @@ public class Main {
                 runExternalCommand(tokens);
             }
         }
+
         scanner.close(); // Close the scanner on exit
     }
 
@@ -57,15 +60,14 @@ public class Main {
      */
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
-        if (pathEnv == null) return null;
+        if (pathEnv == null) 
+            return null;
 
         String[] paths = pathEnv.split(File.pathSeparator);
-
         for (String dir : paths) {
             File file = new File(dir, command);
-            if (file.isFile() && file.canExecute()) {
+            if (file.isFile() && file.canExecute())
                 return file.getAbsolutePath();
-            }
         }
         return null;
     }
@@ -77,7 +79,6 @@ public class Main {
     private static void runExternalCommand(String[] commandParts) {
         ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
         processBuilder.inheritIO(); // Redirect process I/O to the terminal
-
         try {
             Process process = processBuilder.start(); // Start the process
             process.waitFor(); // Wait for it to complete
