@@ -7,28 +7,31 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Define built-in commands handled directly by the shell
-        Set<String> builtins = Set.of("echo", "exit", "type", "pwd");
+        // Define built-in commands handled by the shell
+        Set<String> builtins = Set.of("echo", "exit", "type", "pwd", "cd");
 
         while (true) {
-            System.out.print("$ ");  // Display the shell prompt
-            String input = scanner.nextLine().trim();  // Read user input and trim whitespace
+            System.out.print("$ "); // Display shell prompt
+            String input = scanner.nextLine().trim(); // Read and trim user input
 
-            if (input.isEmpty()) continue;  // Skip empty inputs
+            if (input.isEmpty()) continue; // Ignore empty inputs
 
-            String[] tokens = input.split("\\s+"); // Tokenize input by spaces
-            String command = tokens[0];  // Extract the command name
+            String[] tokens = input.split("\\s+"); // Split input into tokens
+            String command = tokens[0]; // Extract command name
 
             if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
-                break;  // Exit shell on "exit 0"
+                break; // Exit shell on "exit 0"
             } else if (command.equals("echo")) {
-                // Print everything after "echo "
-                System.out.println(input.substring(5));
+                System.out.println(input.substring(5)); // Print everything after "echo "
             } else if (command.equals("pwd")) {
-                // Print current working directory
-                System.out.println(System.getProperty("user.dir"));
+                System.out.println(System.getProperty("user.dir")); // Print working directory
+            } else if (command.equals("cd")) {
+                if (tokens.length < 2) {
+                    System.out.println("cd: missing operand");
+                } else {
+                    changeDirectory(tokens[1]); // Handle "cd"
+                }
             } else if (command.equals("type")) {
-                // Handle "type" command: check if built-in or an external executable
                 if (tokens.length < 2) {
                     System.out.println("type: missing operand");
                     continue;
@@ -45,18 +48,33 @@ public class Main {
                     }
                 }
             } else {
-                // Try to execute external commands
-                runExternalCommand(tokens);
+                runExternalCommand(tokens); // Try running external programs
             }
         }
-
-        scanner.close(); // Close the scanner on exit
+        scanner.close(); // Close scanner on exit
     }
 
     /**
-     * Searches for an executable in the system's PATH environment variable.
-     * @param command The command name to search for
-     * @return The absolute path of the executable if found, otherwise null
+     * Changes the working directory if the given path is absolute.
+     * @param path The new directory path.
+     */
+    private static void changeDirectory(String path) {
+        File newDir = new File(path);
+        if (!newDir.isAbsolute()) {
+            System.out.println("cd: only absolute paths are supported");
+            return;
+        }
+        if (!newDir.exists() || !newDir.isDirectory()) {
+            System.out.println("cd: " + path + ": No such directory");
+            return;
+        }
+        System.setProperty("user.dir", newDir.getAbsolutePath());
+    }
+
+    /**
+     * Searches for an executable in the system's PATH.
+     * @param command The command to search for.
+     * @return The absolute path of the executable if found, otherwise null.
      */
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
@@ -74,7 +92,7 @@ public class Main {
 
     /**
      * Runs an external program with arguments.
-     * @param commandParts The command and its arguments
+     * @param commandParts The command and its arguments.
      */
     private static void runExternalCommand(String[] commandParts) {
         ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
