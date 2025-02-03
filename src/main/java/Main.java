@@ -1,5 +1,7 @@
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -53,13 +55,16 @@ public class Main {
                 }
                 String path = tokens[1];
                 try {
-                    File directory;
+                    Path resolvedPath;
                     if (path.startsWith("/")) { // Absolute path
-                        directory = new File(path);
+                        resolvedPath = Paths.get(path).normalize(); // Normalize absolute paths too
                     } else { // Relative path
-                        String currentDir = System.getProperty("user.dir");
-                        directory = new File(currentDir, path);
+                        Path currentDir = Paths.get(System.getProperty("user.dir"));
+                        resolvedPath = currentDir.resolve(path).normalize(); // Resolve and normalize
                     }
+
+                    File directory = resolvedPath.toFile(); // Get the File object
+
                     if (directory.exists() && directory.isDirectory()) {
                         System.setProperty("user.dir", directory.getAbsolutePath());
                     } else {
@@ -68,6 +73,7 @@ public class Main {
                 } catch (Exception e) {
                     System.out.println("cd: " + path + ": Invalid path");
                 }
+
             } else {
                 // Try to execute external commands
                 runExternalCommand(tokens);
