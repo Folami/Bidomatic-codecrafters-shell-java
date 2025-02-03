@@ -54,14 +54,17 @@ public class Main {
                     continue;
                 }
                 String path = tokens[1];
-                if (path.startsWith("~")) {
+
+                // Correct tilde expansion: Only at the beginning of the path
+                if (path.startsWith("~/") || path.equals("~")) { // Handle ~/ and ~
                     String homeDir = System.getProperty("user.home");
                     if (homeDir == null) {
                         System.out.println("cd: Home directory not set");
                         continue;
                     }
-                    path = homeDir + path.substring(1); // Replace ~ with home directory
+                    path = homeDir + path.substring(1); // Replace ~ or ~/ with home directory
                 }
+
                 try {
                     Path resolvedPath;
                     if (path.startsWith("/")) { // Absolute path
