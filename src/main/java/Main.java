@@ -51,8 +51,19 @@ public class Main {
     }
 
     private static void executeEcho(String[] tokens) {
-        System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // More robust echo
+    if (tokens.length > 1) {  // Check if there are arguments to echo
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < tokens.length; i++) {
+            sb.append(tokens[i]);
+            if (i < tokens.length - 1) { // Add space only if not the last argument
+                sb.append(" ");
+            }
+        }
+        System.out.println(sb.toString());
+    } else {
+        System.out.println(); // Handle "echo" with no arguments (print a blank line)
     }
+}
 
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
