@@ -72,16 +72,34 @@ public class Main {
                 currentToken.append(c);
             }
         }
-        if (currentToken.length() > 0) tokens.add(currentToken.toString());
-        return tokens.stream().map(Main::processEscapeSequences).toArray(String[]::new);
+        if (currentToken.length() > 0) {
+            tokens.add(currentToken.toString());
+        }
+
+        String[] tokenArray = tokens.toArray(new String[0]);
+
+        // Process escape sequences AFTER splitting:
+        for (int i = 0; i < tokenArray.length; i++) {
+            tokenArray[i] = processEscapeSequences(tokenArray[i]);
+        }
+
+        return tokenArray;
     }
 
     private static String processEscapeSequences(String str) {
-        return str.replace("\\n", "\n")
-                  .replace("\\t", "\t")
-                  .replace("\\'", "'")
-                  .replace("\\\"", "\"")
-                  .replace("\\\\", "\\");
+        StringBuilder result = new StringBuilder();
+        boolean escaped = false;
+        for (char c : str.toCharArray()) {
+            if (escaped) {
+                result.append(c);
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 
     private static void executePwd() {
@@ -128,18 +146,16 @@ public class Main {
     }
 
     private static void runExternalCommand(String[] commandParts) {
-        List<String> processedArgs = new ArrayList<>();
-        for (String arg : commandParts) {
-            processedArgs.add(processEscapeSequences(arg));
-        }
         try {
-            ProcessBuilder pb = new ProcessBuilder(processedArgs);
+            ProcessBuilder pb = new ProcessBuilder(commandParts);
             pb.inheritIO();
             Process process = pb.start();
-            process.waitFor();
-            if (process.exitValue() != 0) {
-                System.err.println(commandParts[0] + ": command failed with exit code " + process.exitValue());
+            int exitCode = process.waitFor(); // Capture exit code
+
+            if (exitCode != 0) {
+                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode);
             }
+
         } catch (IOException e) {
             System.err.println(commandParts[0] + ": command not found or could not be executed");
         } catch (InterruptedException e) {
@@ -147,4 +163,5 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
+
 }
