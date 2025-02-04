@@ -180,6 +180,8 @@ public class Main {
         } catch (InterruptedException e) {
             System.err.println("Process interrupted");
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred: " + e.getMessage());
         }
     }
 }
