@@ -60,43 +60,38 @@ public class Main {
 
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
-
-                if (token.startsWith("'") && token.endsWith("'") && token.length() > 1) {
-                    // Handle fully quoted words ('word')
-                    output.append(token.substring(1, token.length() - 1)).append(" ");
-                } else {
-                    for (int j = 0; j < token.length(); j++) {
-                        char c = token.charAt(j);
-
-                        if (c == '\'') {
-                            inQuote = !inQuote; // Toggle quote state
-                        } else {
-                            currentArg.append(c);
+                for (int j = 0; j < token.length(); j++) {
+                    char c = token.charAt(j);
+                    if (c == '\'') {
+                        if (inQuote) {
+                            output.append(currentArg);
+                            currentArg.setLength(0);
                         }
-                    }
-
-                    // If we are not inside a quote, append the current argument to output
-                    if (!inQuote) {
-                        output.append(currentArg).append(" ");
-                        currentArg.setLength(0); // Reset for next token
+                        inQuote = !inQuote;
                     } else {
-                        // Preserve spaces inside quotes
-                        output.append(currentArg).append(" ");
-                        currentArg.setLength(0); // Reset for next token
+                        currentArg.append(c);
                     }
                 }
+                if (!inQuote) {
+                    output.append(currentArg);
+                    if (i < tokens.length - 1) {
+                        output.append(" ");
+                    }
+                    currentArg.setLength(0);
+                } else {
+                    currentArg.append(" ");
+                }
             }
-
-            // Append any remaining text in currentArg
+            // Append any remaining text
             if (currentArg.length() > 0) {
                 output.append(currentArg);
             }
-
             System.out.println(output.toString().trim());
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
+
 
 
 
