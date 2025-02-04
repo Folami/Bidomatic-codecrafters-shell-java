@@ -61,24 +61,21 @@ public class Main {
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
             StringBuilder output = new StringBuilder();
-            boolean inQuote = false;
             boolean firstToken = true;
 
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
                 
-                if (!firstToken && !inQuote) {
+                if (!firstToken) {
                     output.append(' ');
                 }
                 
-                for (int j = 0; j < token.length(); j++) {
-                    char c = token.charAt(j);
-                    
-                    if (c == '\'') {
-                        inQuote = !inQuote;
-                    } else {
-                        output.append(c);
-                    }
+                // Remove surrounding quotes (single or double)
+                if ((token.startsWith("'") && token.endsWith("'")) || 
+                    (token.startsWith("\"") && token.endsWith("\""))) {
+                    output.append(token.substring(1, token.length() - 1));
+                } else {
+                    output.append(token);
                 }
                 
                 firstToken = false;
@@ -89,6 +86,7 @@ public class Main {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
+
 
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
