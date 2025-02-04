@@ -1,7 +1,5 @@
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -53,38 +51,7 @@ public class Main {
                     System.out.println("cd: missing operand");
                     continue;
                 }
-                String path = tokens[1];
-
-                // Correct tilde expansion: Only at the beginning of the path
-                if (path.startsWith("~/") || path.equals("~")) { // Handle ~/ and ~
-                    String homeDir = System.getProperty("user.home");
-                    if (homeDir == null) {
-                        System.out.println("cd: Home directory not set");
-                        continue;
-                    }
-                    path = homeDir + path.substring(1); // Replace ~ or ~/ with home directory
-                }
-
-                try {
-                    Path resolvedPath;
-                    if (path.startsWith("/")) { // Absolute path
-                        resolvedPath = Paths.get(path).normalize();
-                    } else { // Relative path
-                        Path currentDir = Paths.get(System.getProperty("user.dir"));
-                        resolvedPath = currentDir.resolve(path).normalize();
-                    }
-
-                    File directory = resolvedPath.toFile();
-
-                    if (directory.exists() && directory.isDirectory()) {
-                        System.setProperty("user.dir", directory.getAbsolutePath());
-                    } else {
-                        System.out.println("cd: " + path + ": No such file or directory");
-                    }
-                } catch (Exception e) {
-                    System.out.println("cd: " + path + ": Invalid path");
-                }
-
+                changeDirectory(tokens[1]); // Handle "cd"
             } else {
                 // Try to execute external commands
                 runExternalCommand(tokens);
@@ -94,9 +61,40 @@ public class Main {
     }
 
     /**
+     * Changes the working directory, supporting absolute, relative, and home (~) paths.
+     * @param path The directory to change to.
+     */
+    private static void changeDirectory(String path) {
+        String homeDir = System.getProperty("user.home");
+        File directory;
+
+        // Handle "cd ~" or "cd ~/some/path"
+        if (path.equals("~")) {
+            directory = new File(homeDir);
+        } else if (path.startsWith("~/")) {
+            directory = new File(homeDir, path.substring(2));
+        } else {
+            // Handle absolute and relative paths
+            if (path.startsWith("/")) {
+                directory = new File(path);
+            } else {
+                String currentDir = System.getProperty("user.dir");
+                directory = new File(currentDir, path);
+            }
+        }
+
+        // Validate the directory
+        if (directory.exists() && directory.isDirectory()) {
+            System.setProperty("user.dir", directory.getAbsolutePath());
+        } else {
+            System.out.println("cd: " + path + ": No such file or directory");
+        }
+    }
+
+    /**
      * Searches for an executable in the system's PATH environment variable.
-     * @param command The command name to search for
-     * @return The absolute path of the executable if found, otherwise null
+     * @param command The command name to search for.
+     * @return The absolute path of the executable if found, otherwise null.
      */
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
@@ -116,7 +114,7 @@ public class Main {
 
     /**
      * Runs an external program with arguments.
-     * @param commandParts The command and its arguments
+     * @param commandParts The command and its arguments.
      */
     private static void runExternalCommand(String[] commandParts) {
         ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
