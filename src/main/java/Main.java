@@ -54,9 +54,9 @@ public class Main {
 
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
-            List<String> args = new ArrayList<>();
-            StringBuilder currentArg = new StringBuilder();
+            StringBuilder output = new StringBuilder();
             boolean inQuote = false;
+            StringBuilder currentArg = new StringBuilder();
 
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
@@ -65,27 +65,32 @@ public class Main {
                     char c = token.charAt(j);
 
                     if (c == '\'') {
-                        inQuote = !inQuote; // Toggle quote status
-                    } else if (c == ' ' && !inQuote) { // Space outside quotes
-                        if (currentArg.length() > 0) {
-                            args.add(currentArg.toString());
-                            currentArg.setLength(0);
-                        }
+                        inQuote = !inQuote; // Toggle quote state
                     } else {
-                        currentArg.append(c); // Add character to current argument
+                        currentArg.append(c);
                     }
                 }
-                // Add the last part of a token if it is not added in the inner loop
-                if (currentArg.length() > 0) {
-                    args.add(currentArg.toString());
-                    currentArg.setLength(0);
+
+                // If still inside quotes, add a space (preserve spacing within quotes)
+                if (inQuote || i < tokens.length - 1) {
+                    currentArg.append(" ");
+                } else {
+                    output.append(currentArg);
+                    currentArg.setLength(0); // Reset currentArg for next word
                 }
             }
-            System.out.println(String.join(" ", args)); // Join and print with spaces
+
+            // Append any remaining text
+            if (currentArg.length() > 0) {
+                output.append(currentArg);
+            }
+
+            System.out.println(output.toString().trim());
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
+
 
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
