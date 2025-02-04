@@ -88,7 +88,28 @@ public class Main {
         if (currentToken.length() > 0) {
             tokens.add(currentToken.toString());
         }
-        return tokens.toArray(new String[0]);
+        String[] tokenArray = tokens.toArray(new String[0]);
+        // Process escape sequences AFTER splitting:
+        for (int i = 0; i < tokenArray.length; i++) {
+            tokenArray[i] = processEscapeSequences(tokenArray[i]);
+        }
+        return tokenArray;
+    }
+
+    private static String processEscapeSequences(String str) {
+        StringBuilder result = new StringBuilder();
+        boolean escaped = false;
+        for (char c : str.toCharArray()) {
+            if (escaped) {
+                result.append(c); // Append the escaped character directly
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 
     private static void executePwd() {
@@ -157,6 +178,7 @@ public class Main {
             pb.inheritIO(); // Important: Inherit I/O for proper interaction
             Process process = pb.start();
             process.waitFor();
+
             if (process.exitValue() != 0) {
                 System.err.println(commandParts[0] + ": command failed with exit code " + process.exitValue());
             }
