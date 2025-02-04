@@ -161,15 +161,14 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            // 1. Create the command string (including any quoting/escaping)
-            StringBuilder commandString = new StringBuilder();
-            for (String part : commandParts) {
-                commandString.append(part).append(" ");
+            // Unescape all command parts (especially file paths)
+            for (int i = 0; i < commandParts.length; i++) {
+                commandParts[i] = processEscapeSequences(commandParts[i]);
             }
-            String cmd = commandString.toString().trim(); // Remove trailing space
-            // 2. Use ProcessBuilder with a shell to interpret the command
-            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", cmd); // Or "/bin/bash", "/bin/zsh" etc.
-            pb.inheritIO();
+
+            // Create a ProcessBuilder directly with properly unescaped arguments
+            ProcessBuilder pb = new ProcessBuilder(commandParts);
+            pb.inheritIO(); // Important: Inherit I/O for proper interaction
             Process process = pb.start();
             int exitCode = process.waitFor();
             if (exitCode != 0) {
