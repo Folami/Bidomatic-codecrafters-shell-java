@@ -44,8 +44,17 @@ public class Main {
     }
 
     private static void executeEcho(String[] tokens) {
-        System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length)));
+        if (tokens.length > 1) {
+            String[] processedTokens = new String[tokens.length - 1];
+            for (int i = 1; i < tokens.length; i++) {
+                processedTokens[i - 1] = processEscapeSequences(tokens[i]);
+            }
+            System.out.println(String.join(" ", processedTokens));
+        } else {
+            System.out.println();
+        }
     }
+
 
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
@@ -59,6 +68,7 @@ public class Main {
                 escape = false;
             } else if (c == '\\') {
                 escape = true;
+                currentToken.append(c);
             } else if ((c == ' ' || c == '\t') && quoteChar == 0) {
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
@@ -66,8 +76,10 @@ public class Main {
                 }
             } else if ((c == '\'' || c == '"') && quoteChar == 0) {
                 quoteChar = c;
+                currentToken.append(c);
             } else if (c == quoteChar) {
                 quoteChar = 0;
+                currentToken.append(c);
             } else {
                 currentToken.append(c);
             }
@@ -75,32 +87,30 @@ public class Main {
         if (currentToken.length() > 0) {
             tokens.add(currentToken.toString());
         }
-
-        String[] tokenArray = tokens.toArray(new String[0]);
-
-        // Process escape sequences AFTER splitting:
-        for (int i = 0; i < tokenArray.length; i++) {
-            tokenArray[i] = processEscapeSequences(tokenArray[i]);
-        }
-
-        return tokenArray;
+        return tokens.toArray(new String[0]);
     }
 
-    private static String processEscapeSequences(String str) {
-        StringBuilder result = new StringBuilder();
-        boolean escaped = false;
-        for (char c : str.toCharArray()) {
-            if (escaped) {
-                result.append(c);
-                escaped = false;
+    private static String processEscapeSequences(String input) {
+        StringBuilder output = new StringBuilder();
+        boolean escape = false;
+        for (char c : input.toCharArray()) {
+            if (escape) {
+                switch (c) {
+                    case 'n': output.append('\n'); break;
+                    case 't': output.append('\t'); break;
+                    case 'r': output.append('\r'); break;
+                    default: output.append(c);
+                }
+                escape = false;
             } else if (c == '\\') {
-                escaped = true;
+                escape = true;
             } else {
-                result.append(c);
+                output.append(c);
             }
         }
-        return result.toString();
+        return output.toString();
     }
+
 
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
