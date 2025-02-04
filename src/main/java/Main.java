@@ -2,8 +2,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -15,16 +17,19 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             String input = promptAndGetInput();
-            if (input == null) break; // Exit if input is null (e.g., Ctrl+D)
+            if (input == null) 
+                break; // Exit if input is null (e.g., Ctrl+D)
 
-            String[] tokens = input.split("\\s+");
-            if (tokens.length == 0) continue; // Skip empty input
+            String[] tokens = splitPreservingQuotes(input);
+            if (tokens.length == 0) 
+                continue; // Skip empty input
 
             String command = tokens[0];
             executeCommand(command, tokens);
         }
         scanner.close();
     }
+
 
     private static String promptAndGetInput() {
         System.out.print("$ ");
@@ -51,37 +56,63 @@ public class Main {
     }
 
     private static void executeEcho(String[] tokens) {
-    if (tokens.length > 1) {
-        StringBuilder output = new StringBuilder();
-        boolean inQuote = false;
-        
-        for (int i = 1; i < tokens.length; i++) {
-            String token = tokens[i];
-            
-            for (int j = 0; j < token.length(); j++) {
-                char c = token.charAt(j);
+        if (tokens.length > 1) {
+            StringBuilder output = new StringBuilder();
+            boolean inQuote = false;
+            boolean firstToken = true;
+
+            for (int i = 1; i < tokens.length; i++) {
+                String token = tokens[i];
                 
-                if (c == '\'') {
-                    inQuote = !inQuote;
-                } else {
-                    output.append(c);
+                if (!firstToken && !inQuote) {
+                    output.append(' ');
                 }
+                
+                for (int j = 0; j < token.length(); j++) {
+                    char c = token.charAt(j);
+                    
+                    if (c == '\'') {
+                        inQuote = !inQuote;
+                    } else {
+                        output.append(c);
+                    }
+                }
+                
+                firstToken = false;
             }
             
-            if (i < tokens.length - 1) {
-                if (inQuote) {
-                    output.append(' ');
-                } else if (!token.endsWith("'") || !tokens[i + 1].startsWith("'")) {
-                    output.append(' ');
+            System.out.println(output.toString());
+        } else {
+            System.out.println(); // Handle "echo" with no arguments
+        }
+    }
+
+    private static String[] splitPreservingQuotes(String input) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        boolean inQuote = false;
+        
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (c == ' ' && !inQuote) {
+                if (currentToken.length() > 0) {
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
                 }
+            } else if (c == '\'') {
+                inQuote = !inQuote;
+                currentToken.append(c);
+            } else {
+                currentToken.append(c);
             }
         }
         
-        System.out.println(output.toString());
-    } else {
-        System.out.println(); // Handle "echo" with no arguments
+        if (currentToken.length() > 0) {
+            tokens.add(currentToken.toString());
+        }
+        
+        return tokens.toArray(new String[0]);
     }
-}
 
 
     private static void executePwd() {
