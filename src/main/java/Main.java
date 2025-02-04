@@ -161,13 +161,14 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            // Unescape all command parts (especially file paths)
-            for (int i = 0; i < commandParts.length; i++) {
-                commandParts[i] = processEscapeSequences(commandParts[i]);
+            // Convert the command parts into a properly formatted shell command
+            StringBuilder commandString = new StringBuilder();
+            for (String part : commandParts) {
+                commandString.append("\"").append(part.replace("\"", "\\\"")).append("\" ").append(" ");
             }
-
-            // Create a ProcessBuilder directly with properly unescaped arguments
-            ProcessBuilder pb = new ProcessBuilder(commandParts);
+            
+            // Use /bin/sh -c to ensure proper escape interpretation
+            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", commandString.toString().trim());
             pb.inheritIO(); // Important: Inherit I/O for proper interaction
             Process process = pb.start();
             int exitCode = process.waitFor();
