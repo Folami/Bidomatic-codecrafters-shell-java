@@ -61,49 +61,43 @@ public class Main {
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
             StringBuilder output = new StringBuilder();
+            boolean inQuote = false;
             boolean firstToken = true;
-
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
-                
-                if (!firstToken) {
+                if (!firstToken && !inQuote) {
                     output.append(' ');
                 }
-                
-                if ((token.startsWith("'") && token.endsWith("'")) || 
-                    (token.startsWith("\"") && token.endsWith("\""))) {
-                    output.append(token.substring(1, token.length() - 1));
-                } else {
-                    output.append(token);
+                for (int j = 0; j < token.length(); j++) {
+                    char c = token.charAt(j);
+                    if (c == '\'') {
+                        inQuote = !inQuote;
+                    } else {
+                        output.append(c);
+                    }
                 }
-                
                 firstToken = false;
             }
-            
             System.out.println(output.toString());
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
 
-
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
         StringBuilder currentToken = new StringBuilder();
-        char quoteChar = 0;
+        boolean inQuote = false;
         
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-            if ((c == ' ' || c == '\t') && quoteChar == 0) {
+            if (c == ' ' && !inQuote) {
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken.setLength(0);
                 }
-            } else if ((c == '\'' || c == '"') && quoteChar == 0) {
-                quoteChar = c;
-                currentToken.append(c);
-            } else if (c == quoteChar) {
-                quoteChar = 0;
+            } else if (c == '\'') {
+                inQuote = !inQuote;
                 currentToken.append(c);
             } else {
                 currentToken.append(c);
@@ -116,7 +110,6 @@ public class Main {
         
         return tokens.toArray(new String[0]);
     }
-
 
 
     private static void executePwd() {
@@ -180,39 +173,41 @@ public class Main {
     }
 
     private static void runExternalCommand(String[] commandParts) {
-        try {
-            List<String> command = new ArrayList<>();
-            StringBuilder currentArg = new StringBuilder();
-            char quoteChar = 0;
-            for (String part : commandParts) {
-                for (char c : part.toCharArray()) {
-                    if ((c == '\'' || c == '"') && quoteChar == 0) {
-                        quoteChar = c;
-                    } else if (c == quoteChar) {
-                        quoteChar = 0;
-                    } else {
-                        currentArg.append(c);
-                    }
-                }
-                if (quoteChar == 0) {
-                    command.add(currentArg.toString());
-                    currentArg.setLength(0);
+    try {
+        List<String> command = new ArrayList<>();
+        StringBuilder currentArg = new StringBuilder();
+        boolean inQuote = false;
+
+        for (String part : commandParts) {
+            for (char c : part.toCharArray()) {
+                if (c == '\'') {
+                    inQuote = !inQuote;
                 } else {
-                    currentArg.append(' ');
+                    currentArg.append(c);
                 }
             }
-            if (currentArg.length() > 0) {
+            if (!inQuote) {
                 command.add(currentArg.toString());
+                currentArg.setLength(0);
+            } else {
+                currentArg.append(' ');
             }
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
-            processBuilder.inheritIO();
-            Process process = processBuilder.start();
-            process.waitFor();
-        } catch (IOException e) {
-            System.out.println(commandParts[0] + ": command not found");
-        } catch (InterruptedException e) {
-            System.out.println("Process interrupted");
-            Thread.currentThread().interrupt();
         }
+
+        if (currentArg.length() > 0) {
+            command.add(currentArg.toString());
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.inheritIO();
+        Process process = processBuilder.start();
+        process.waitFor();
+    } catch (IOException e) {
+        System.out.println(commandParts[0] + ": command not found");
+    } catch (InterruptedException e) {
+        System.out.println("Process interrupted");
+        Thread.currentThread().interrupt();
     }
+}
+
 }
