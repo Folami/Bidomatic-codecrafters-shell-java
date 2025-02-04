@@ -2,8 +2,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -52,8 +54,40 @@ public class Main {
 
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
-            String input = String.join(" ", tokens); // Join all tokens back into a string
-            System.out.println(input.substring(input.indexOf(" ") + 1)); // Print from after the first space
+            List<String> args = new ArrayList<>();
+            StringBuilder currentArg = new StringBuilder();
+            boolean inQuote = false;
+
+            for (int i = 1; i < tokens.length; i++) {
+                String token = tokens[i];
+
+                for (int j = 0; j < token.length(); j++) {
+                    char c = token.charAt(j);
+
+                    if (c == '\'') {
+                        if (inQuote) {
+                            inQuote = false;
+                        } else {
+                            inQuote = true;
+                        }
+                    } else if (c == ' ' && !inQuote) {
+                        if (currentArg.length() > 0) {
+                            args.add(currentArg.toString());
+                            currentArg.setLength(0);
+                        }
+                    } else {
+                        currentArg.append(c);
+                    }
+                }
+                if (currentArg.length() > 0) {
+                  args.add(currentArg.toString());
+                  currentArg.setLength(0);
+                }
+
+
+            }
+            System.out.println(String.join(" ", args));
+
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
