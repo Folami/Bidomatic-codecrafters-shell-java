@@ -161,15 +161,15 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            // Convert the command parts into a properly formatted shell command
-            StringBuilder commandString = new StringBuilder();
-            for (String part : commandParts) {
-                commandString.append("\"").append(part.replace("\"", "\\\"")).append("\" ").append(" ");
+            // Convert escape sequences in arguments before execution
+            List<String> processedArgs = new ArrayList<>();
+            for (String arg : commandParts) {
+                processedArgs.add(processEscapeSequences(arg));
             }
-            
-            // Use /bin/sh -c to ensure proper escape interpretation
-            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", commandString.toString().trim());
-            pb.inheritIO(); // Important: Inherit I/O for proper interaction
+
+            // Use ProcessBuilder with the correctly parsed arguments
+            ProcessBuilder pb = new ProcessBuilder(processedArgs);
+            pb.inheritIO();
             Process process = pb.start();
             int exitCode = process.waitFor();
             if (exitCode != 0) {
