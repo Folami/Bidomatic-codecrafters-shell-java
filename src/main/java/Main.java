@@ -55,7 +55,7 @@ public class Main {
                 }
                 String path = tokens[1];
                 if (path.startsWith("~/") || path.equals("~")) {
-                    String homeDir = System.getProperty("user.home");
+                    String homeDir = System.getenv("HOME");
                     if (homeDir == null) {
                         System.out.println("cd: Home directory not set");
                         continue;
