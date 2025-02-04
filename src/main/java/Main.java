@@ -64,7 +64,7 @@ public class Main {
         StringBuilder currentToken = new StringBuilder();
         char quoteChar = 0;
         boolean escape = false;
-        
+
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
             if (escape) {
@@ -153,16 +153,18 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            List<String> processedArgs = new ArrayList<>();
-            for (String part : commandParts) {
-                processedArgs.add(part.replace("\\", "")); // Remove escape sequences
-            }
-            Process process = new ProcessBuilder(processedArgs).inheritIO().start();
+            ProcessBuilder pb = new ProcessBuilder(commandParts);
+            pb.inheritIO(); // Important: Inherit I/O for proper interaction
+            Process process = pb.start();
             process.waitFor();
+            if (process.exitValue() != 0) {
+                System.err.println(commandParts[0] + ": command failed with exit code " + process.exitValue());
+            }
+
         } catch (IOException e) {
-            System.out.println(commandParts[0] + ": command not found");
+            System.err.println(commandParts[0] + ": command not found or could not be executed");
         } catch (InterruptedException e) {
-            System.out.println("Process interrupted");
+            System.err.println("Process interrupted");
             Thread.currentThread().interrupt();
         }
     }
