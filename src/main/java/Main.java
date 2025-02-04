@@ -65,29 +65,23 @@ public class Main {
                     char c = token.charAt(j);
 
                     if (c == '\'') {
-                        if (inQuote) {
-                            inQuote = false;
-                        } else {
-                            inQuote = true;
-                        }
-                    } else if (c == ' ' && !inQuote) {
+                        inQuote = !inQuote; // Toggle quote status
+                    } else if (c == ' ' && !inQuote) { // Space outside quotes
                         if (currentArg.length() > 0) {
                             args.add(currentArg.toString());
                             currentArg.setLength(0);
                         }
                     } else {
-                        currentArg.append(c);
+                        currentArg.append(c); // Add character to current argument
                     }
                 }
+                // Add the last part of a token if it is not added in the inner loop
                 if (currentArg.length() > 0) {
-                  args.add(currentArg.toString());
-                  currentArg.setLength(0);
+                    args.add(currentArg.toString());
+                    currentArg.setLength(0);
                 }
-
-
             }
-            System.out.println(String.join(" ", args));
-
+            System.out.println(String.join(" ", args)); // Join and print with spaces
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
