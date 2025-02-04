@@ -161,15 +161,20 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            ProcessBuilder pb = new ProcessBuilder(commandParts);
+            // 1. Create the command string (including any quoting/escaping)
+            StringBuilder commandString = new StringBuilder();
+            for (String part : commandParts) {
+                commandString.append(part).append(" ");
+            }
+            String cmd = commandString.toString().trim(); // Remove trailing space
+            // 2. Use ProcessBuilder with a shell to interpret the command
+            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", cmd); // Or "/bin/bash", "/bin/zsh" etc.
             pb.inheritIO();
             Process process = pb.start();
-            int exitCode = process.waitFor(); // Capture exit code
-
+            int exitCode = process.waitFor();
             if (exitCode != 0) {
                 System.err.println(commandParts[0] + ": command failed with exit code " + exitCode);
             }
-
         } catch (IOException e) {
             System.err.println(commandParts[0] + ": command not found or could not be executed");
         } catch (InterruptedException e) {
@@ -177,5 +182,4 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
-
 }
