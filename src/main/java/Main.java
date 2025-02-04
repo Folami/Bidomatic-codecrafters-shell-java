@@ -47,11 +47,8 @@ public class Main {
                     }
                 }
             } else if (command.equals("cd")) {
-                if (tokens.length < 2) {
-                    System.out.println("cd: missing operand");
-                    continue;
-                }
-                changeDirectory(tokens[1]); // Handle "cd"
+                // Handle "cd" command
+                changeDirectory(tokens);
             } else {
                 // Try to execute external commands
                 runExternalCommand(tokens);
@@ -62,32 +59,44 @@ public class Main {
 
     /**
      * Changes the working directory, supporting absolute, relative, and home (~) paths.
-     * @param path The directory to change to.
+     * @param tokens The parsed command tokens (includes "cd" and arguments).
      */
-    private static void changeDirectory(String path) {
+    private static void changeDirectory(String[] tokens) {
         String homeDir = System.getProperty("user.home");
-        File directory;
+        String newPath;
 
-        // Handle "cd ~" or "cd ~/some/path"
-        if (path.equals("~")) {
-            directory = new File(homeDir);
-        } else if (path.startsWith("~/")) {
-            directory = new File(homeDir, path.substring(2));
+        // If no argument is given, default to home directory
+        if (tokens.length < 2) {
+            newPath = homeDir;
         } else {
-            // Handle absolute and relative paths
-            if (path.startsWith("/")) {
-                directory = new File(path);
+            String path = tokens[1];
+
+            // Handle "cd ~" and "cd ~/path"
+            if (path.equals("~")) {
+                newPath = homeDir;
+            } else if (path.startsWith("~/")) {
+                newPath = homeDir + path.substring(1);
             } else {
-                String currentDir = System.getProperty("user.dir");
-                directory = new File(currentDir, path);
+                File newDir = new File(path);
+                if (!newDir.isAbsolute()) {
+                    newDir = new File(System.getProperty("user.dir"), path); // Convert to absolute
+                }
+                try {
+                    newPath = newDir.getCanonicalPath(); // Resolve symbolic links and ".."
+                } catch (IOException e) {
+                    System.out.println("cd: " + path + ": Invalid path");
+                    return;
+                }
             }
         }
 
+        File targetDir = new File(newPath);
+
         // Validate the directory
-        if (directory.exists() && directory.isDirectory()) {
-            System.setProperty("user.dir", directory.getAbsolutePath());
+        if (targetDir.exists() && targetDir.isDirectory()) {
+            System.setProperty("user.dir", targetDir.getAbsolutePath());
         } else {
-            System.out.println("cd: " + path + ": No such file or directory");
+            System.out.println("cd: " + newPath + ": No such file or directory");
         }
     }
 
