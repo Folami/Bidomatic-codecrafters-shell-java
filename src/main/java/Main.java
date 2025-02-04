@@ -17,7 +17,7 @@ public class Main {
             if (input == null) 
                 break; // Exit if input is null (e.g., Ctrl+D)
 
-            String[] tokens = splitPreservingQuotesAndEscapes(input);
+            String[] tokens = splitPreservingQuotes(input);
             if (tokens.length == 0) 
                 continue; // Skip empty input
 
@@ -37,7 +37,7 @@ public class Main {
 
     private static void executeCommand(String command, String[] tokens) {
         if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
-            System.exit(0);
+            System.exit(0); // Use System.exit for immediate exit
         } else if (command.equals("echo")) {
             executeEcho(tokens);
         } else if (command.equals("pwd")) {
@@ -55,36 +55,32 @@ public class Main {
         if (tokens.length > 1) {
             System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length)));
         } else {
-            System.out.println();
+            System.out.println(); // Handle "echo" with no arguments
         }
     }
 
-    private static String[] splitPreservingQuotesAndEscapes(String input) {
+    private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
         StringBuilder currentToken = new StringBuilder();
-        boolean inQuote = false;
         char quoteChar = 0;
         boolean escape = false;
-
+        
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-
             if (escape) {
-                currentToken.append(c); // Always add escaped characters
+                currentToken.append(c);
                 escape = false;
             } else if (c == '\\') {
-                escape = true; // Next character is escaped
-            } else if ((c == '"' || c == '\'') && !inQuote) {
-                inQuote = true;
-                quoteChar = c;
-            } else if (c == quoteChar) {
-                inQuote = false;
-                quoteChar = 0;
-            } else if ((c == ' ' || c == '\t') && !inQuote) {
+                escape = true;
+            } else if ((c == ' ' || c == '\t') && quoteChar == 0) {
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken.setLength(0);
                 }
+            } else if ((c == '\'' || c == '"') && quoteChar == 0) {
+                quoteChar = c;
+            } else if (c == quoteChar) {
+                quoteChar = 0;
             } else {
                 currentToken.append(c);
             }
@@ -157,7 +153,11 @@ public class Main {
 
     private static void runExternalCommand(String[] commandParts) {
         try {
-            Process process = new ProcessBuilder(commandParts).inheritIO().start();
+            List<String> processedArgs = new ArrayList<>();
+            for (String part : commandParts) {
+                processedArgs.add(part.replace("\\", "")); // Remove escape sequences
+            }
+            Process process = new ProcessBuilder(processedArgs).inheritIO().start();
             process.waitFor();
         } catch (IOException e) {
             System.out.println(commandParts[0] + ": command not found");
