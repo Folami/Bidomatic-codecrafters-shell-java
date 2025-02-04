@@ -2,10 +2,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -53,47 +51,37 @@ public class Main {
     }
 
     private static void executeEcho(String[] tokens) {
-        if (tokens.length > 1) {
-            StringBuilder output = new StringBuilder();
-            boolean inQuote = false;
-            StringBuilder currentArg = new StringBuilder();
-
-            for (int i = 1; i < tokens.length; i++) {
-                String token = tokens[i];
-                for (int j = 0; j < token.length(); j++) {
-                    char c = token.charAt(j);
-                    if (c == '\'') {
-                        if (inQuote) {
-                            output.append(currentArg);
-                            currentArg.setLength(0);
-                        }
-                        inQuote = !inQuote;
-                    } else {
-                        currentArg.append(c);
-                    }
-                }
-                if (!inQuote) {
-                    output.append(currentArg);
-                    if (i < tokens.length - 1) {
-                        output.append(" ");
-                    }
-                    currentArg.setLength(0);
+    if (tokens.length > 1) {
+        StringBuilder output = new StringBuilder();
+        boolean inQuote = false;
+        
+        for (int i = 1; i < tokens.length; i++) {
+            String token = tokens[i];
+            
+            for (int j = 0; j < token.length(); j++) {
+                char c = token.charAt(j);
+                
+                if (c == '\'') {
+                    inQuote = !inQuote;
                 } else {
-                    currentArg.append(" ");
+                    output.append(c);
                 }
             }
-            // Append any remaining text
-            if (currentArg.length() > 0) {
-                output.append(currentArg);
+            
+            if (i < tokens.length - 1) {
+                if (inQuote) {
+                    output.append(' ');
+                } else if (!token.endsWith("'") || !tokens[i + 1].startsWith("'")) {
+                    output.append(' ');
+                }
             }
-            System.out.println(output.toString().trim());
-        } else {
-            System.out.println(); // Handle "echo" with no arguments
         }
+        
+        System.out.println(output.toString());
+    } else {
+        System.out.println(); // Handle "echo" with no arguments
     }
-
-
-
+}
 
 
     private static void executePwd() {
