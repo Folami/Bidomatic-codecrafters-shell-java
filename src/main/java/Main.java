@@ -63,21 +63,27 @@ public class Main {
             StringBuilder output = new StringBuilder();
             boolean inQuote = false;
             boolean firstToken = true;
+
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
+                
                 if (!firstToken && !inQuote) {
                     output.append(' ');
                 }
+                
                 for (int j = 0; j < token.length(); j++) {
                     char c = token.charAt(j);
+                    
                     if (c == '\'') {
                         inQuote = !inQuote;
                     } else {
                         output.append(c);
                     }
                 }
+                
                 firstToken = false;
             }
+            
             System.out.println(output.toString());
         } else {
             System.out.println(); // Handle "echo" with no arguments
@@ -173,41 +179,14 @@ public class Main {
     }
 
     private static void runExternalCommand(String[] commandParts) {
-    try {
-        List<String> command = new ArrayList<>();
-        StringBuilder currentArg = new StringBuilder();
-        boolean inQuote = false;
-
-        for (String part : commandParts) {
-            for (char c : part.toCharArray()) {
-                if (c == '\'') {
-                    inQuote = !inQuote;
-                } else {
-                    currentArg.append(c);
-                }
-            }
-            if (!inQuote) {
-                command.add(currentArg.toString());
-                currentArg.setLength(0);
-            } else {
-                currentArg.append(' ');
-            }
+        try {
+            Process process = new ProcessBuilder(commandParts).inheritIO().start();
+            process.waitFor();
+        } catch (IOException e) {
+            System.out.println(commandParts[0] + ": command not found");
+        } catch (InterruptedException e) {
+            System.out.println("Process interrupted");
+            Thread.currentThread().interrupt();
         }
-
-        if (currentArg.length() > 0) {
-            command.add(currentArg.toString());
-        }
-
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.inheritIO();
-        Process process = processBuilder.start();
-        process.waitFor();
-    } catch (IOException e) {
-        System.out.println(commandParts[0] + ": command not found");
-    } catch (InterruptedException e) {
-        System.out.println("Process interrupted");
-        Thread.currentThread().interrupt();
     }
-}
-
 }
