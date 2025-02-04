@@ -1,5 +1,7 @@
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -16,11 +18,11 @@ public class Main {
             System.out.print("$ "); // Display the shell prompt
             String input = scanner.nextLine().trim(); // Read user input and trim whitespace
 
-            if (input.isEmpty()) continue; // Skip empty inputs
+            if (input.isEmpty()) 
+                continue; // Skip empty inputs
 
             String[] tokens = input.split("\\s+"); // Tokenize input by spaces
             String command = tokens[0]; // Extract the command name
-
             if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
                 break; // Exit shell on "exit 0"
             } else if (command.equals("echo")) {
@@ -47,8 +49,37 @@ public class Main {
                     }
                 }
             } else if (command.equals("cd")) {
-                // Handle "cd" command
-                changeDirectory(tokens);
+                if (tokens.length < 2) {
+                    System.out.println("cd: missing operand");
+                    continue;
+                }
+                String path = tokens[1];
+                if (path.startsWith("~/") || path.equals("~")) {
+                    String homeDir = System.getProperty("user.home");
+                    if (homeDir == null) {
+                        System.out.println("cd: Home directory not set");
+                        continue;
+                    }
+                    path = homeDir + path.substring(1);
+                }
+
+                try {
+                    Path resolvedPath;
+                    if (path.startsWith("/")) { // Absolute path
+                        resolvedPath = Paths.get(path).normalize();
+                    } else { // Relative path
+                        Path currentDir = Paths.get(System.getProperty("user.dir"));
+                        resolvedPath = currentDir.resolve(path).normalize();
+                    }
+                    File directory = resolvedPath.toFile();
+                    if (directory.exists() && directory.isDirectory()) {
+                        System.setProperty("user.dir", directory.getAbsolutePath());
+                    } else {
+                        System.out.println("cd: " + path + ": No such file or directory");
+                    }
+                } catch (Exception e) {
+                    System.out.println("cd: " + path + ": Invalid path");
+                }
             } else {
                 // Try to execute external commands
                 runExternalCommand(tokens);
@@ -57,78 +88,33 @@ public class Main {
         scanner.close(); // Close the scanner on exit
     }
 
+    // ... (findExecutable and runExternalCommand methods remain the same)
     /**
-     * Changes the working directory, supporting absolute, relative, and home (~) paths.
-     * @param tokens The parsed command tokens (includes "cd" and arguments).
-     */
-    private static void changeDirectory(String[] tokens) {
-        String homeDir = System.getProperty("user.home");
-        String newPath;
-
-        // If no argument is given, default to home directory
-        if (tokens.length < 2) {
-            newPath = homeDir;
-        } else {
-            String path = tokens[1];
-
-            // Handle "cd ~" and "cd ~/path"
-            if (path.equals("~")) {
-                newPath = homeDir;
-            } else if (path.startsWith("~/")) {
-                newPath = homeDir + path.substring(1);
-            } else {
-                File newDir = new File(path);
-                if (!newDir.isAbsolute()) {
-                    newDir = new File(System.getProperty("user.dir"), path); // Convert to absolute
-                }
-                try {
-                    newPath = newDir.getCanonicalPath(); // Resolve symbolic links and ".."
-                } catch (IOException e) {
-                    System.out.println("cd: " + path + ": Invalid path");
-                    return;
-                }
-            }
-        }
-
-        File targetDir = new File(newPath);
-
-        // Validate the directory
-        if (targetDir.exists() && targetDir.isDirectory()) {
-            System.setProperty("user.dir", targetDir.getAbsolutePath());
-        } else {
-            System.out.println("cd: " + newPath + ": No such file or directory");
-        }
-    }
-
-    /**
-     * Searches for an executable in the system's PATH environment variable.
-     * @param command The command name to search for.
-     * @return The absolute path of the executable if found, otherwise null.
-     */
+    * Searches for an executable in the system's PATH environment variable.
+    * @param command The command name to search for
+    * @return The absolute path of the executable if found, otherwise null
+    */
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
-        if (pathEnv == null) return null;
-
+        if (pathEnv == null) 
+            return null;
+            
         String[] paths = pathEnv.split(File.pathSeparator);
-
         for (String dir : paths) {
             File file = new File(dir, command);
-            if (file.isFile() && file.canExecute()) {
+            if (file.isFile() && file.canExecute()) 
                 return file.getAbsolutePath();
             }
-        }
-
         return null;
     }
 
     /**
-     * Runs an external program with arguments.
-     * @param commandParts The command and its arguments.
-     */
+    * Runs an external program with arguments.
+    * @param commandParts The command and its arguments
+    */
     private static void runExternalCommand(String[] commandParts) {
         ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
         processBuilder.inheritIO(); // Redirect process I/O to the terminal
-
         try {
             Process process = processBuilder.start(); // Start the process
             process.waitFor(); // Wait for it to complete
