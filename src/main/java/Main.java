@@ -75,16 +75,19 @@ public class Main {
                         }
                     }
 
+                    // If we are not inside a quote, append the current argument to output
                     if (!inQuote) {
                         output.append(currentArg).append(" ");
                         currentArg.setLength(0); // Reset for next token
                     } else {
-                        currentArg.append(" "); // Preserve spaces inside quotes
+                        // Preserve spaces inside quotes
+                        output.append(currentArg).append(" ");
+                        currentArg.setLength(0); // Reset for next token
                     }
                 }
             }
 
-            // Append any remaining text
+            // Append any remaining text in currentArg
             if (currentArg.length() > 0) {
                 output.append(currentArg);
             }
@@ -94,6 +97,7 @@ public class Main {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
+
 
 
 
