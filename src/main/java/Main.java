@@ -60,60 +60,40 @@ public class Main {
 
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
-            StringBuilder output = new StringBuilder();
-            boolean firstToken = true;
-
-            for (int i = 1; i < tokens.length; i++) {
-                String token = tokens[i];
-                
-                if (!firstToken) {
-                    output.append(' ');
-                }
-                
-                // Remove surrounding quotes (single or double)
-                if ((token.startsWith("'") && token.endsWith("'")) || 
-                    (token.startsWith("\"") && token.endsWith("\""))) {
-                    output.append(token.substring(1, token.length() - 1));
-                } else {
-                    output.append(token);
-                }
-                
-                firstToken = false;
-            }
-            
-            System.out.println(output.toString());
+            System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length)));
         } else {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
 
 
+
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
         StringBuilder currentToken = new StringBuilder();
-        boolean inQuote = false;
+        char quoteChar = 0;
         
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-            if (c == ' ' && !inQuote) {
+            if ((c == ' ' || c == '\t') && quoteChar == 0) {
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken.setLength(0);
                 }
-            } else if (c == '\'') {
-                inQuote = !inQuote;
-                currentToken.append(c);
+            } else if ((c == '\'' || c == '"') && quoteChar == 0) {
+                quoteChar = c;
+            } else if (c == quoteChar) {
+                quoteChar = 0;
             } else {
                 currentToken.append(c);
             }
         }
-        
         if (currentToken.length() > 0) {
             tokens.add(currentToken.toString());
         }
-        
         return tokens.toArray(new String[0]);
     }
+
 
 
     private static void executePwd() {
