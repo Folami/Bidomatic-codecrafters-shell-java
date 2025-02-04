@@ -8,116 +8,116 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class Main {
+
+    private static final Set<String> BUILTINS = new HashSet<>(Arrays.asList("echo", "exit", "type", "pwd", "cd"));
+    private static final Scanner scanner = new Scanner(System.in);
+
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-
-        // Define built-in commands handled directly by the shell
-        Set<String> builtins = new HashSet<>(Arrays.asList("echo", "exit", "type", "pwd", "cd"));
-
         while (true) {
-            System.out.print("$ "); // Display the shell prompt
-            String input = scanner.nextLine().trim(); // Read user input and trim whitespace
+            String input = promptAndGetInput();
+            if (input == null) break; // Exit if input is null (e.g., Ctrl+D)
 
-            if (input.isEmpty()) 
-                continue; // Skip empty inputs
+            String[] tokens = input.split("\\s+");
+            if (tokens.length == 0) continue; // Skip empty input
 
-            String[] tokens = input.split("\\s+"); // Tokenize input by spaces
-            String command = tokens[0]; // Extract the command name
-            if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
-                break; // Exit shell on "exit 0"
-            } else if (command.equals("echo")) {
-                // Print everything after "echo "
-                System.out.println(input.substring(5));
-            } else if (command.equals("pwd")) {
-                // Print current working directory
-                System.out.println(System.getProperty("user.dir"));
-            } else if (command.equals("type")) {
-                // Handle "type" command: check if built-in or an external executable
-                if (tokens.length < 2) {
-                    System.out.println("type: missing operand");
-                    continue;
-                }
-                String targetCommand = tokens[1];
-                if (builtins.contains(targetCommand)) {
-                    System.out.println(targetCommand + " is a shell builtin");
-                } else {
-                    String path = findExecutable(targetCommand);
-                    if (path != null) {
-                        System.out.println(targetCommand + " is " + path);
-                    } else {
-                        System.out.println(targetCommand + " not found");
-                    }
-                }
-            } else if (command.equals("cd")) {
-                if (tokens.length < 2) {
-                    System.out.println("cd: missing operand");
-                    continue;
-                }
-                String path = tokens[1];
-                if (path.startsWith("~/") || path.equals("~")) {
-                    String homeDir = System.getenv("HOME");
-                    if (homeDir == null) {
-                        System.out.println("cd: Home directory not set");
-                        continue;
-                    }
-                    path = homeDir + path.substring(1);
-                }
-
-                try {
-                    Path resolvedPath;
-                    if (path.startsWith("/")) { // Absolute path
-                        resolvedPath = Paths.get(path).normalize();
-                    } else { // Relative path
-                        Path currentDir = Paths.get(System.getProperty("user.dir"));
-                        resolvedPath = currentDir.resolve(path).normalize();
-                    }
-                    File directory = resolvedPath.toFile();
-                    if (directory.exists() && directory.isDirectory()) {
-                        System.setProperty("user.dir", directory.getAbsolutePath());
-                    } else {
-                        System.out.println("cd: " + path + ": No such file or directory");
-                    }
-                } catch (Exception e) {
-                    System.out.println("cd: " + path + ": Invalid path");
-                }
-            } else {
-                // Try to execute external commands
-                runExternalCommand(tokens);
-            }
+            String command = tokens[0];
+            executeCommand(command, tokens);
         }
-        scanner.close(); // Close the scanner on exit
+        scanner.close();
     }
 
-    // ... (findExecutable and runExternalCommand methods remain the same)
-    /**
-    * Searches for an executable in the system's PATH environment variable.
-    * @param command The command name to search for
-    * @return The absolute path of the executable if found, otherwise null
-    */
+    private static String promptAndGetInput() {
+        System.out.print("$ ");
+        if (scanner.hasNextLine()) {
+            return scanner.nextLine().trim();
+        }
+        return null; // Handle end of input (Ctrl+D)
+    }
+
+    private static void executeCommand(String command, String[] tokens) {
+        if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
+            System.exit(0); // Use System.exit for immediate exit
+        } else if (command.equals("echo")) {
+            executeEcho(tokens);
+        } else if (command.equals("pwd")) {
+            executePwd();
+        } else if (command.equals("type")) {
+            executeType(tokens);
+        } else if (command.equals("cd")) {
+            executeCd(tokens);
+        } else {
+            runExternalCommand(tokens);
+        }
+    }
+
+    private static void executeEcho(String[] tokens) {
+        System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // More robust echo
+    }
+
+    private static void executePwd() {
+        System.out.println(System.getProperty("user.dir"));
+    }
+
+    private static void executeType(String[] tokens) {
+        if (tokens.length < 2) {
+            System.out.println("type: missing operand");
+            return;
+        }
+        String targetCommand = tokens[1];
+        if (BUILTINS.contains(targetCommand)) {
+            System.out.println(targetCommand + " is a shell builtin");
+        } else {
+            String path = findExecutable(targetCommand);
+            System.out.println(targetCommand + (path != null ? " is " + path : " not found"));
+        }
+    }
+
+    private static void executeCd(String[] tokens) {
+        if (tokens.length < 2) {
+            System.out.println("cd: missing operand");
+            return;
+        }
+        String path = tokens[1];
+        if (path.startsWith("~/") || path.equals("~")) {
+            String homeDir = System.getenv("HOME"); // Use System.getenv("HOME") for better cross-platform compatibility
+            if (homeDir == null) {
+                System.out.println("cd: Home directory not set");
+                return;
+            }
+            path = homeDir + path.substring(1);
+        }
+        try {
+            Path resolvedPath = (
+                path.startsWith("/") ? Paths.get(path).normalize() :
+                Paths.get(System.getProperty("user.dir")).resolve(path).normalize()
+            );
+            File directory = resolvedPath.toFile();
+            if (directory.exists() && directory.isDirectory()) {
+                System.setProperty("user.dir", directory.getAbsolutePath());
+            } else {
+                System.out.println("cd: " + path + ": No such file or directory");
+            }
+        } catch (Exception e) {
+            System.out.println("cd: " + path + ": Invalid path");
+        }
+    }
+
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
-        if (pathEnv == null) 
-            return null;
-            
-        String[] paths = pathEnv.split(File.pathSeparator);
-        for (String dir : paths) {
+        if (pathEnv == null) return null;
+        for (String dir : pathEnv.split(File.pathSeparator)) {
             File file = new File(dir, command);
-            if (file.isFile() && file.canExecute()) 
+            if (file.isFile() && file.canExecute()) {
                 return file.getAbsolutePath();
             }
+        }
         return null;
     }
 
-    /**
-    * Runs an external program with arguments.
-    * @param commandParts The command and its arguments
-    */
     private static void runExternalCommand(String[] commandParts) {
-        ProcessBuilder processBuilder = new ProcessBuilder(commandParts);
-        processBuilder.inheritIO(); // Redirect process I/O to the terminal
         try {
-            Process process = processBuilder.start(); // Start the process
-            process.waitFor(); // Wait for it to complete
+            Process process = new ProcessBuilder(commandParts).inheritIO().start();
+            process.waitFor();
         } catch (IOException e) {
             System.out.println(commandParts[0] + ": command not found");
         } catch (InterruptedException e) {
