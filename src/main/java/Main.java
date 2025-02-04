@@ -61,22 +61,26 @@ public class Main {
             for (int i = 1; i < tokens.length; i++) {
                 String token = tokens[i];
 
-                for (int j = 0; j < token.length(); j++) {
-                    char c = token.charAt(j);
-
-                    if (c == '\'') {
-                        inQuote = !inQuote; // Toggle quote state
-                    } else {
-                        currentArg.append(c);
-                    }
-                }
-
-                // If still inside quotes, add a space (preserve spacing within quotes)
-                if (inQuote || i < tokens.length - 1) {
-                    currentArg.append(" ");
+                if (token.startsWith("'") && token.endsWith("'") && token.length() > 1) {
+                    // Handle fully quoted words ('word')
+                    output.append(token.substring(1, token.length() - 1)).append(" ");
                 } else {
-                    output.append(currentArg);
-                    currentArg.setLength(0); // Reset currentArg for next word
+                    for (int j = 0; j < token.length(); j++) {
+                        char c = token.charAt(j);
+
+                        if (c == '\'') {
+                            inQuote = !inQuote; // Toggle quote state
+                        } else {
+                            currentArg.append(c);
+                        }
+                    }
+
+                    if (!inQuote) {
+                        output.append(currentArg).append(" ");
+                        currentArg.setLength(0); // Reset for next token
+                    } else {
+                        currentArg.append(" "); // Preserve spaces inside quotes
+                    }
                 }
             }
 
@@ -90,6 +94,7 @@ public class Main {
             System.out.println(); // Handle "echo" with no arguments
         }
     }
+
 
 
     private static void executePwd() {
