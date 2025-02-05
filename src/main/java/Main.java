@@ -94,25 +94,36 @@ public class Main {
         return tokenArray;
     }
 
-    private static String processEscapeSequences(String str) {
-        StringBuilder result = new StringBuilder();
-        boolean escaped = false;
-        for (char c : str.toCharArray()) {
-            if (escaped) {
-                switch (c) {
-                    case 'n': result.append('\n'); break;
-                    case 't': result.append('\t'); break;
-                    case 'r': result.append('\r'); break;
-                    default: result.append(c); // Handle other escaped characters
+    private static String processEscapeSequences(String input) {
+        StringBuilder output = new StringBuilder();
+        boolean isEscaped = false;
+        
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            
+            if (isEscaped) {
+                if (c == 'n') {
+                    output.append("n"); // Preserve \n literally for file paths
+                } else if (c == '\'') {
+                    output.append("'");
+                } else if (c == '4') {
+                    output.append("4"); // Preserve \4 literally for file paths
+                } else {
+                    output.append(c);
                 }
-                escaped = false;
+                isEscaped = false;
             } else if (c == '\\') {
-                escaped = true;
+                isEscaped = true;
             } else {
-                result.append(c);
+                output.append(c);
             }
         }
-        return result.toString();
+        
+        if (isEscaped) {
+            output.append('\\');
+        }
+        
+        return output.toString();
     }
 
     private static void executePwd() {
@@ -162,11 +173,19 @@ public class Main {
         try {
             // Convert escape sequences in arguments before execution
             List<String> processedArgs = new ArrayList<>();
-            for (String arg : commandParts) {
-                processedArgs.add(processEscapeSequences(arg));
+            processedArgs.add(commandParts[0]); // Add command name as-is
+            
+            // Process remaining arguments (if any)
+            for (int i = 1; i < commandParts.length; i++) {
+                String arg = commandParts[i];
+                // Remove surrounding quotes if present
+                if ((arg.startsWith("\"") && arg.endsWith("\"")) || 
+                    (arg.startsWith("'") && arg.endsWith("'"))) {
+                    arg = arg.substring(1, arg.length() - 1);
+                }
+                processedArgs.add(arg); // Add argument without processing escape sequences
             }
 
-            // Use ProcessBuilder with the correctly parsed arguments
             ProcessBuilder pb = new ProcessBuilder(processedArgs);
             pb.inheritIO();
             Process process = pb.start();
