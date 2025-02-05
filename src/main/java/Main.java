@@ -115,6 +115,44 @@ public class Main {
         return result.toString();
     }
 
+    private static String processEscapeSequences(String arg) {
+        StringBuilder result = new StringBuilder();
+        boolean escaping = false;
+        for (char c : arg.toCharArray()) {
+            if (escaping) {
+                switch (c) {
+                    case 'n':
+                        result.append('\n');
+                        break;
+                    case 't':
+                        result.append('\t');
+                        break;
+                    case '\\':
+                        result.append('\\');
+                        break;
+                    case '\'':
+                        result.append('\'');
+                        break;
+                    case '\"':
+                        result.append('\"');
+                        break;
+                    default:
+                        result.append(c);
+                        break;
+                }
+                escaping = false;
+            } else if (c == '\\') {
+                escaping = true;
+            } else {
+                result.append(c);
+            }
+        }
+        if (escaping) {
+            result.append('\\');
+        }
+        return result.toString();
+    }
+
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
     }
