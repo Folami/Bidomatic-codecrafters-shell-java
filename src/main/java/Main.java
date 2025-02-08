@@ -23,8 +23,7 @@ public class Main {
 
     private static String promptAndGetInput() {
         System.out.print("$ ");
-        return scanner.hasNextLine()
-            ? scanner.nextLine().trim() : null;
+        return scanner.hasNextLine() ? scanner.nextLine().trim() : null;
     }
 
     private static void executeCommand(String[] tokens) {
