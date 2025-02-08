@@ -13,9 +13,11 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             String input = promptAndGetInput();
-            if (input == null) break;
+            if (input == null) 
+                break;
             String[] tokens = splitPreservingQuotes(input);
-            if (tokens.length == 0) continue;
+            if (tokens.length == 0) 
+                continue;
             executeCommand(tokens);
         }
         scanner.close();
