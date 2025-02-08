@@ -222,37 +222,4 @@ public class Main {
 
         return output.toString();
     }
-
-
-    private static void runExternalCommand(String[] commandParts) {
-        try {
-            List<String> command = new ArrayList<>();
-            command.add("/bin/sh"); // Use /bin/sh to handle shell features.
-            command.add("-c");
-            StringBuilder cmd = new StringBuilder();
-
-            for (int i = 0; i < commandParts.length; i++) {
-                cmd.append(commandParts[i]);
-                if (i < commandParts.length - 1) {
-                    cmd.append(" ");
-                }
-            }
-            command.add(cmd.toString());
-
-            ProcessBuilder pb = new ProcessBuilder(command); // Create ProcessBuilder with command.
-            pb.inheritIO(); // Inherit standard input/output streams.
-            Process process = pb.start(); // Start the process.
-            int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
-            if (exitCode != 0) {
-                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode); // Print error message.
-            }
-        } catch (IOException e) {
-            System.err.println(commandParts[0] + ": command not found or could not be executed"); // Handle IO exceptions.
-        } catch (InterruptedException e) {
-            System.err.println("Process interrupted"); // Handle interrupted exceptions.
-            Thread.currentThread().interrupt(); // Interrupt the current thread.
-        } catch (Exception e) {
-            System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
-        }
-    }
 }
