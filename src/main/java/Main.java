@@ -136,20 +136,12 @@ public class Main {
     // runExternalCommand(): Runs an external command using ProcessBuilder.
     private static void runExternalCommand(String[] commandParts) {
         try {
-            List<String> command = new ArrayList<>();
-            command.add("/bin/sh"); // Use /bin/sh to handle shell features.
-            command.add("-c");
-            StringBuilder cmd = new StringBuilder();
-
-            for (int i = 0; i < commandParts.length; i++) {
-                cmd.append(commandParts[i]);
-                if (i < commandParts.length - 1) {
-                    cmd.append(" ");
-                }
+            // Build the command list for ProcessBuilder.
+            List<String> processedArgs = new ArrayList<>();
+            for (String arg : commandParts) {
+                processedArgs.add(processEscapeSequences(arg));
             }
-            command.add(cmd.toString());
-
-            ProcessBuilder pb = new ProcessBuilder(command); // Create ProcessBuilder with command.
+            ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
             pb.inheritIO(); // Inherit standard input/output streams.
             Process process = pb.start(); // Start the process.
             int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
