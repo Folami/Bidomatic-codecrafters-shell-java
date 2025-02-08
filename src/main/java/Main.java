@@ -124,29 +124,24 @@ public class Main {
 
     // executeCat(): Customized implementation for the "cat" command.
     private static void executeCat(String[] tokens) {
-        if (tokens.length < 2) {
-            System.err.println("cat: missing operand");
-            return;
-        }
-        for (int i = 1; i < tokens.length; i++) {
-            String filePath = tokens[i];
-            // Resolve relative paths with respect to the current directory.
-            File file = new File(filePath);
-            if (!file.isAbsolute()) {
-                file = new File(System.getProperty("user.dir"), filePath);
+            if (tokens.length < 2) {
+                System.err.println("cat: missing operand");
+                return;
             }
-            if (!file.exists() || !file.isFile()) {
-                System.err.println("cat: " + filePath + ": No such file or directory");
-                continue;
-            }
-            try {
-                byte[] content = java.nio.file.Files.readAllBytes(file.toPath());
-                System.out.print(new String(content));
-            } catch (IOException e) {
-                System.err.println("cat: " + filePath + ": " + e.getMessage());
+    
+            for (int i = 1; i < tokens.length; i++) {
+                String filename = processEscapeSequences(tokens[i]);
+                try {
+                    Path path = Paths.get(filename);
+                    List<String> lines = Files.readAllLines(path);
+                    for (String line : lines) {
+                        System.out.println(line);
+                    }
+                } catch (IOException e) {
+                    System.err.println("cat: " + filename + ": " + e.getMessage());
+                }
             }
         }
-    }
 
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
