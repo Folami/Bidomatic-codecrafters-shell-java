@@ -63,6 +63,8 @@ public class Main {
                                 // a built-in or an external program).
         } else if (command.equals("cd")) {
             executeCd(tokens); // Execute the cd (change directory) command.
+        } else if (command.equals("cat")) {
+            executeCat(tokens); // Use our customized cat implementation.
         } else {
             runExternalCommand(tokens); // If the command is not a built-in, try to run it
                                         // as an external program.
@@ -117,6 +119,32 @@ public class Main {
             }
         } catch (Exception e) {
             System.out.println("cd: " + path + ": Invalid path"); // Handle potential exceptions.
+        }
+    }
+
+    // executeCat(): Customized implementation for the "cat" command.
+    private static void executeCat(String[] tokens) {
+        if (tokens.length < 2) {
+            System.err.println("cat: missing operand");
+            return;
+        }
+        for (int i = 1; i < tokens.length; i++) {
+            String filePath = tokens[i];
+            // Resolve relative paths with respect to the current directory.
+            File file = new File(filePath);
+            if (!file.isAbsolute()) {
+                file = new File(System.getProperty("user.dir"), filePath);
+            }
+            if (!file.exists() || !file.isFile()) {
+                System.err.println("cat: " + filePath + ": No such file or directory");
+                continue;
+            }
+            try {
+                byte[] content = java.nio.file.Files.readAllBytes(file.toPath());
+                System.out.print(new String(content));
+            } catch (IOException e) {
+                System.err.println("cat: " + filePath + ": " + e.getMessage());
+            }
         }
     }
 
