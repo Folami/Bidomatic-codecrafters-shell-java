@@ -13,11 +13,9 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             String input = promptAndGetInput();
-            if (input == null) 
-                break;
+            if (input == null) break;
             String[] tokens = splitPreservingQuotes(input);
-            if (tokens.length == 0) 
-                continue;
+            if (tokens.length == 0) continue;
             executeCommand(tokens);
         }
         scanner.close();
@@ -25,8 +23,7 @@ public class Main {
 
     private static String promptAndGetInput() {
         System.out.print("$ ");
-        return scanner.hasNextLine()
-            ? scanner.nextLine().trim() : null;
+        return scanner.hasNextLine() ? scanner.nextLine().trim() : null;
     }
 
     private static void executeCommand(String[] tokens) {
@@ -52,6 +49,81 @@ public class Main {
         } else {
             System.out.println();
         }
+    }
+
+    private static String[] splitPreservingQuotes(String input) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        char quoteChar = 0;
+        boolean escape = false;
+
+        for (char c : input.toCharArray()) {
+            if (escape) {
+                currentToken.append(c);
+                escape = false;
+            } else if (c == '\\') {
+                escape = true;
+                // Do NOT append the backslash itself when escaping
+            } else if ((c == ' ' || c == '\t') && quoteChar == 0) {
+                if (currentToken.length() > 0) {
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                }
+            } else if ((c == '\'' || c == '"') && quoteChar == 0) {
+                quoteChar = c;
+                // Do NOT append the quote character itself when starting a quote
+            } else if (c == quoteChar) {
+                quoteChar = 0;
+                // Do NOT append the quote character itself when ending a quote
+            } else {
+                currentToken.append(c);
+            }
+        }
+
+        if (currentToken.length() > 0) {
+            tokens.add(currentToken.toString());
+        }
+
+        String[] tokenArray = tokens.toArray(new String[0]);
+
+        // Process escape sequences AFTER splitting:
+        for (int i = 0; i < tokenArray.length; i++) {
+            tokenArray[i] = processEscapeSequences(tokenArray[i]);
+        }
+
+        return tokenArray;
+    }
+
+    private static String processEscapeSequences(String input) {
+        StringBuilder output = new StringBuilder();
+        boolean isEscaped = false;
+        
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            
+            if (isEscaped) {
+                if (c == 'n') {
+                    output.append("n"); // Preserve \n literally for file paths
+                } else if (c == '\'') {
+                    output.append("'");
+                } else if (c == '4') {
+                    output.append("4"); // Preserve \4 literally for file paths
+                } else {
+                    output.append(c);
+                }
+                isEscaped = false;
+            } else if (c == '\\') {
+                isEscaped = true;
+            } else {
+                output.append(c);
+            }
+        }
+        
+        if (isEscaped) {
+            output.append('\\');
+        }
+        
+        return output.toString();
     }
 
     private static void executePwd() {
@@ -89,12 +161,10 @@ public class Main {
 
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
-        if (pathEnv == null) 
-            return null;
+        if (pathEnv == null) return null;
         for (String dir : pathEnv.split(File.pathSeparator)) {
             File file = new File(dir, command);
-            if (file.isFile() && file.canExecute()) 
-                return file.getAbsolutePath();
+            if (file.isFile() && file.canExecute()) return file.getAbsolutePath();
         }
         return null;
     }
