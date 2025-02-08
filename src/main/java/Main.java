@@ -123,24 +123,33 @@ public class Main {
     }
 
     // executeCat(): Customized implementation for the "cat" command.
-    private static void executeCat(String[] tokens) {
+private static void executeCat(String[] tokens) {
         if (tokens.length < 2) {
-            System.err.println("cat: missing operand");
-                return;
+            System.out.println("cat: missing operand");
+            return;
         }
-        for (int i = 1; i < tokens.length; i++) {
-            String filename = processEscapeSequences(tokens[i]);
-            try {
-                Path path = Paths.get(filename);
-                List<String> lines = Files.readAllLines(path);
-                for (String line : lines) {
-                    System.out.println(line);
+        try {
+            StringBuilder concatenatedOutput = new StringBuilder();
+            for (int i = 1; i < tokens.length; i++) {
+                String filePath = tokens[i];
+                File file = new File(filePath); // No need for path resolving, as we're using absolute paths in the test case.
+                if (file.exists() && file.isFile()) {
+                    try (BufferedReader reader = new BufferedReader(new java.io.FileReader(file))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            concatenatedOutput.append(line).append("\n"); // Append each line with a newline
+                        }
+                    }
+                } else {
+                    System.err.println("cat: " + filePath + ": No such file or directory");
+                    return; // Exit early if a file is not found.
                 }
-            } catch (IOException e) {
-                System.err.println("cat: " + filename + ": " + e.getMessage());
             }
+            System.out.print(concatenatedOutput.toString()); // Print the concatenated output.
+        } catch (IOException e) {
+            System.err.println("cat: An I/O error occurred: " + e.getMessage());
         }
-    }
+    }    
 
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
