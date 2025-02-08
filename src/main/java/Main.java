@@ -80,7 +80,7 @@ public class Main {
 
     // executePwd(): Handles the "pwd" command.
     private static void executePwd() {
-        System.out.println(System.getProperty("user.dir")); // Print the current directory.  System.getProperty("user.dir")
+        System.out.println(System.getProperty("user.dir")); // Print the current directory.System.getProperty("user.dir")
                                                             // gets the value of the "user.dir" system property, which
                                                             // holds the path to the current working directory.
     }
@@ -136,21 +136,20 @@ public class Main {
     // runExternalCommand(): Runs an external command using ProcessBuilder.
     private static void runExternalCommand(String[] commandParts) {
         try {
-            // Build the command list for ProcessBuilder.
-            List<String> processedArgs = new ArrayList<>();
-            processedArgs.add(commandParts[0]); // Add command name as-is.
+            List<String> command = new ArrayList<>();
+            command.add("/bin/sh"); // Use /bin/sh to handle shell features.
+            command.add("-c");
+            StringBuilder cmd = new StringBuilder();
 
-            // Process remaining arguments (if any). Remove surrounding quotes.
-            for (int i = 1; i < commandParts.length; i++) {
-                String arg = commandParts[i];
-                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
-                    (arg.startsWith("'") && arg.endsWith("'"))) {
-                    arg = arg.substring(1, arg.length() - 1);
+            for (int i = 0; i < commandParts.length; i++) {
+                cmd.append(commandParts[i]);
+                if (i < commandParts.length - 1) {
+                    cmd.append(" ");
                 }
-                processedArgs.add(arg); // Add argument without processing escape sequences.
             }
+            command.add(cmd.toString());
 
-            ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
+            ProcessBuilder pb = new ProcessBuilder(command); // Create ProcessBuilder with command.
             pb.inheritIO(); // Inherit standard input/output streams.
             Process process = pb.start(); // Start the process.
             int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
@@ -196,18 +195,14 @@ public class Main {
                 currentToken.append(c); // Add the char to the current token.
             }
         }
-
         if (currentToken.length() > 0) {
             tokens.add(currentToken.toString()); // Add the last token.
         }
-
         String[] tokenArray = tokens.toArray(new String[0]);
-
         // Process escape sequences AFTER splitting:
         for (int i = 0; i < tokenArray.length; i++) {
             tokenArray[i] = processEscapeSequences(tokenArray[i]); // Process escape sequences in each token.
         }
-
         return tokenArray;
     }
 
@@ -215,10 +210,8 @@ public class Main {
     private static String processEscapeSequences(String input) {
         StringBuilder output = new StringBuilder();
         boolean isEscaped = false;
-
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-
             if (isEscaped) {
                 switch (c) {
                     case 'n': output.append("\n"); break; // Append newline.
