@@ -124,24 +124,23 @@ public class Main {
 
     // executeCat(): Customized implementation for the "cat" command.
     private static void executeCat(String[] tokens) {
-            if (tokens.length < 2) {
-                System.err.println("cat: missing operand");
+        if (tokens.length < 2) {
+            System.err.println("cat: missing operand");
                 return;
-            }
-    
-            for (int i = 1; i < tokens.length; i++) {
-                String filename = processEscapeSequences(tokens[i]);
-                try {
-                    Path path = Paths.get(filename);
-                    List<String> lines = Files.readAllLines(path);
-                    for (String line : lines) {
-                        System.out.println(line);
-                    }
-                } catch (IOException e) {
-                    System.err.println("cat: " + filename + ": " + e.getMessage());
+        }
+        for (int i = 1; i < tokens.length; i++) {
+            String filename = processEscapeSequences(tokens[i]);
+            try {
+                Path path = Paths.get(filename);
+                List<String> lines = Files.readAllLines(path);
+                for (String line : lines) {
+                    System.out.println(line);
                 }
+            } catch (IOException e) {
+                System.err.println("cat: " + filename + ": " + e.getMessage());
             }
         }
+    }
 
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
