@@ -137,7 +137,7 @@ public class Main {
                 Path path = Paths.get(filename);
                 List<String> lines = Files.readAllLines(path);
                 for (String line : lines) {
-                    System.out.println(line);
+                    System.out.println(line + 't');
                 }
             } catch (IOException e) {
                 System.err.println("cat: " + filename + ": " + e.getMessage());
