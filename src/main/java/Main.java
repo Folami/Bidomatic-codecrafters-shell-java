@@ -64,7 +64,7 @@ public class Main {
         } else if (command.equals("type")) {
             executeType(tokens); // Execute the type command (tells whether a command is
                                 // a built-in or an external program).
-        } elsqe if (command.equals("cd")) {
+        } else if (command.equals("cd")) {
             executeCd(tokens); // Execute the cd (change directory) command.
         } else if (command.equals("cat")) {
             executeCat(tokens); // Use our customized cat implementation.
