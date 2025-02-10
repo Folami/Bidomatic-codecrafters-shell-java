@@ -64,7 +64,7 @@ public class Main {
         } else if (command.equals("type")) {
             executeType(tokens); // Execute the type command (tells whether a command is
                                 // a built-in or an external program).
-        } else if (command.equals("cd")) {
+        } elsqe if (command.equals("cd")) {
             executeCd(tokens); // Execute the cd (change directory) command.
         } else if (command.equals("cat")) {
             executeCat(tokens); // Use our customized cat implementation.
@@ -137,7 +137,7 @@ public class Main {
                 Path path = Paths.get(filename);
                 List<String> lines = Files.readAllLines(path);
                 for (String line : lines) {
-                    System.out.println(line + 't');
+                    System.out.println(line + 'cgcgycgc');
                 }
             } catch (IOException e) {
                 System.err.println("cat: " + filename + ": " + e.getMessage());
