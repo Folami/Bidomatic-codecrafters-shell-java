@@ -123,12 +123,12 @@ public class Main {
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH"); // Get the PATH environment variable.
-        if (pathEnv == null)  // PATH is not set
+        if (pathEnv == null) // PATH is not set
             return null;
             
         for (String dir : pathEnv.split(File.pathSeparator)) { // Split PATH into directories.
             File file = new File(dir, command); // Create a File object for the command.
-            if (file.isFile() && file.canExecute())  // Check if it's a file and executable.
+            if (file.isFile() && file.canExecute()) // Check if it's a file and executable.
                 return file.getAbsolutePath(); // Return the absolute path.
             }
         return null; // Return null if not found.
