@@ -119,6 +119,36 @@ public class Main {
             System.out.println("cd: " + path + ": Invalid path"); // Handle potential exceptions.
         }
     }
+
+    private static void executeCat(String[] tokens) {
+        if (tokens.length < 2) {
+            System.out.println("cat: missing operand");
+            return;
+        }
+
+        try {
+            StringBuilder concatenatedOutput = new StringBuilder();
+            for (int i = 1; i < tokens.length; i++) {
+                String filePath = tokens[i];
+                File file = new File(filePath);
+
+                if (file.exists() && file.isFile()) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            concatenatedOutput.append(line).append("\n");
+                        }
+                    }
+                } else {
+                    System.err.println("cat: " + filePath + ": No such file or directory");
+                    return; // Important: Exit if ANY file is not found.
+                }
+            }
+            System.out.print(concatenatedOutput.toString());
+        } catch (IOException e) {
+            System.err.println("cat: An I/O error occurred: " + e.getMessage());
+        }
+    }
     
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
@@ -136,34 +166,40 @@ public class Main {
 
     // runExternalCommand(): Runs an external command using ProcessBuilder.
     private static void runExternalCommand(String[] commandParts) {
+        String command = commandParts[0];
+        if (command.equals("cat")) {
+            executeCat(commandParts);
+            return; // Cat is handled separately.
+        }
+
         try {
-            // Build the command list for ProcessBuilder.
-            List<String> processedArgs = new ArrayList<>();
-            processedArgs.add(commandParts[0]); // Add command name as-is.
-        
-            // Process remaining arguments (if any). Remove surrounding quotes.
-            for (int i = 1; i < commandParts.length; i++) {
-                String arg = commandParts[i];
-                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
-                    (arg.startsWith("'") && arg.endsWith("'"))) {
-                    arg = arg.substring(1, arg.length() - 1);
+            List<String> command = new ArrayList<>();
+            command.add("/bin/sh");
+            command.add("-c");
+            StringBuilder cmd = new StringBuilder();
+
+            for (int i = 0; i < commandParts.length; i++) {
+                cmd.append(commandParts[i]);
+                if (i < commandParts.length - 1) {
+                    cmd.append(" ");
                 }
-                processedArgs.add(arg); // Add argument without processing escape sequences.
             }
-            ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
-            pb.inheritIO(); // Inherit standard input/output streams.
-            Process process = pb.start(); // Start the process.
-            int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
+            command.add(cmd.toString());
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.inheritIO();
+            Process process = pb.start();
+            int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode); // Print error message.
+                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode);
             }
         } catch (IOException e) {
-            System.err.println(commandParts[0] + ": command not found or could not be executed"); // Handle IO exceptions.
+            System.err.println(commandParts[0] + ": command not found or could not be executed");
         } catch (InterruptedException e) {
-            System.err.println("Process interrupted"); // Handle interrupted exceptions.
-            Thread.currentThread().interrupt(); // Interrupt the current thread.
+            System.err.println("Process interrupted");
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
-            System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
+            System.err.println("An unexpected error occurred: " + e.getMessage());
         }
     }
     
@@ -232,4 +268,24 @@ public class Main {
         }
         return output.toString();
     }
+}
+
+import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+public class Main {
+    // ... (BUILTINS, scanner, main, promptAndGetInput, executeCommand, 
+    //      executeEcho, executePwd, executeType, executeCd, findExecutable 
+    //      remain exactly the same as in the previous fully commented version)
+
+
+    
+
+    // ... (splitPreservingQuotes, processEscapeSequences remain exactly the same)
+
 }
