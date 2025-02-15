@@ -130,12 +130,22 @@ public class Main {
         try {
             StringBuilder concatenatedOutput = new StringBuilder();
             for (int i = 1; i < tokens.length; i++) {
-                String filePath = tokens[i];
+                // Process escape sequences on the file token to get the correct file path.
+                String filePath = processEscapeSequences(tokens[i]);
                 File file = new File(filePath);
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    concatenatedOutput.append(line).append("\n");
+                if (file.exists() && file.isFile()) { // Check if file exists.
+                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                        String line;
+                        // Read the file line by line.
+                        while ((line = reader.readLine()) != null) {
+                            // Append the line without adding an extra newline
+                            // so that the final output matches the expected result.
+                            concatenatedOutput.append(line);
+                        }
+                    }
+                } else {
+                    System.err.println("cat: " + filePath + ": No such file or directory");
+                    return; // Exit immediately if ANY file is not found.
                 }
             }
             System.out.print(concatenatedOutput.toString());
@@ -143,6 +153,7 @@ public class Main {
             System.err.println("cat: An I/O error occurred: " + e.getMessage());
         }
     }
+
     
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
