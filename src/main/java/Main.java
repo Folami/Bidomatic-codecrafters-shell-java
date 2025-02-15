@@ -168,12 +168,11 @@ public class Main {
 
     // runExternalCommand(): Runs an external command using ProcessBuilder.
     private static void runExternalCommand(String[] commandParts) {
-        String command = commandParts[0];
-        if (command.equals("cat")) {
+        String command1 = commandParts[0];
+        if (command1.equals("cat")) {
             executeCat(commandParts);
             return; // Cat is handled separately.
         }
-
         try {
             List<String> command = new ArrayList<>();
             command.add("/bin/sh");
