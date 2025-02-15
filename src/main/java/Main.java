@@ -71,19 +71,19 @@ public class Main {
 
     // executeEcho(): Handles the "echo" command.
     private static void executeEcho(String[] tokens) {
-        if (tokens.length > 1) {
-            System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // Print the arguments, joined by spaces.
-        } else {
-            System.out.println(); // Print a newline if no arguments are given to "echo".
-        }
-    }
-
-    // executePwd(): Handles the "pwd" command.
-    private static void executePwd() {
-        System.out.println(System.getProperty("user.dir")); // Print the current directory. System.getProperty("user.dir")
+        if (tokens.length > 1) {
+            System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // Print the arguments, joined by spaces.
+        } else {
+            System.out.println(); // Print a newline if no arguments are given to "echo".
+        }
+    }
+    
+    // executePwd(): Handles the "pwd" command.
+    private static void executePwd() {
+        System.out.println(System.getProperty("user.dir")); // Print the current directory. System.getProperty("user.dir")
                                                             // gets the value of the "user.dir" system property, which
                                                             // holds the path to the current working directory.
-    }
+    }
 
     // executeType(): Handles the "type" command.
     private static void executeType(String[] tokens) {
