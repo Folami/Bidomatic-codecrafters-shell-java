@@ -132,17 +132,10 @@ public class Main {
             for (int i = 1; i < tokens.length; i++) {
                 String filePath = tokens[i];
                 File file = new File(filePath);
-
-                if (true) {
-                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            concatenatedOutput.append(line).append("\n");
-                        }
-                    }
-                } else {
-                    System.err.println("cat: " + filePath + ": No such file or directory");
-                    return; // Important: Exit if ANY file is not found.
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    concatenatedOutput.append(line).append("\n");
                 }
             }
             System.out.print(concatenatedOutput.toString());
