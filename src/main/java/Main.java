@@ -5,19 +5,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
-    // BUILTINS: A set containing the names of commands that are built into the shell.
-    // These commands are handled directly by the shell itself, rather than by running
-    // external programs.  Using a Set allows for efficient checking if a command
-    // is a built-in.
-    private static final Set<String> BUILTINS = new HashSet<>(
-            Arrays.asList("echo", "exit", "type", "pwd", "cd")
-    );
-
-    // scanner: A Scanner object used to read input from the user.  It reads from
-    // System.in, which is the standard input stream (usually the keyboard).
-    private static final Scanner scanner = new Scanner(System.in);
-
-    public static void main(String[] args) {
+    // BUILTINS: A set containing the names of commands that are built into the shell.
+    // These commands are handled directly by the shell itself, rather than by running
+    // external programs.  Using a Set allows for efficient checking if a command
+    // is a built-in.
+    private static final Set<String> BUILTINS = new HashSet<>(
+        Arrays.asList("echo", "exit", "type", "pwd", "cd")
+    );
+    // scanner: A Scanner object used to read input from the user.  It reads from
+    // System.in, which is the standard input stream (usually the keyboard).
+    private static final Scanner scanner = new Scanner(System.in);
+    
+    public static void main(String[] args) {
         // Main shell loop.  This loop continuously prompts the user for commands,
         // processes them, and repeats until the user enters the "exit" command or
         // signals the end of input (e.g., by pressing Ctrl+D).
