@@ -40,10 +40,10 @@ public class Main {
     // from the user.
     private static String promptAndGetInput() {
         System.out.print("$ "); // Print the shell prompt to indicate it's ready for input.
-        return scanner.hasNextLine()  // Check if there's more input available.  This is a non-blocking
-                                    // call; it returns immediately.
+        return scanner.hasNextLine() // Check if there's more input available.  This is a non-blocking
+                                     // call; it returns immediately.
             ? scanner.nextLine().trim() // Read the line of input, and then .trim() removes any
-                                        // leading or trailing whitespace (spaces, tabs, etc.)
+                                        // leading or trailing whitespace (spaces, tabs, etc.)
             : null; // Return null if there's no more input (end-of-file).
     }
     
@@ -52,24 +52,24 @@ public class Main {
         String command = tokens[0]; // The first token is the command name.
         if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
             System.exit(0); // Exit the shell if the command is "exit 0".  A non-zero
-                           // exit code could be used to indicate an error, but this
-                           // simple shell always exits with 0 (success).
+                            // exit code could be used to indicate an error, but this
+                            // simple shell always exits with 0 (success).
         } else if (command.equals("echo")) {
             executeEcho(tokens); // Execute the echo command.
         } else if (command.equals("pwd")) {
             executePwd(); // Execute the pwd (print working directory) command.
         } else if (command.equals("type")) {
             executeType(tokens); // Execute the type command (tells whether a command is
-                                // a built-in or an external program).
+                                 // a built-in or an external program).
         } else if (command.equals("cd")) {
             executeCd(tokens); // Execute the cd (change directory) command.
         } else {
             runExternalCommand(tokens); // If the command is not a built-in, try to run it
-                                        // as an external program.
+                                        // as an external program.
         }
     }
-
-    // executeEcho(): Handles the "echo" command.
+    
+    // executeEcho(): Handles the "echo" command.
     private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
             System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // Print the arguments, joined by spaces.
@@ -81,164 +81,155 @@ public class Main {
     // executePwd(): Handles the "pwd" command.
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir")); // Print the current directory. System.getProperty("user.dir")
-                                                            // gets the value of the "user.dir" system property, which
-                                                            // holds the path to the current working directory.
+                                                            // gets the value of the "user.dir" system property, which
+                                                            // holds the path to the current working directory.
     }
 
-    // executeType(): Handles the "type" command.
-    private static void executeType(String[] tokens) {
-        if (tokens.length < 2) {
-            System.out.println("type: missing operand"); // Print an error if no command name is provided.
-            return;
-        }
-        String targetCommand = tokens[1]; // The command to check.
-        if (BUILTINS.contains(targetCommand)) {
-            System.out.println(targetCommand + " is a shell builtin"); // It's a built-in command.
-        } else {
-            String path = findExecutable(targetCommand); // Try to find the executable file.
-            System.out.println(targetCommand + (path != null ? " is " + path : " not found")); // Print the result.
-        }
-    }
+    // executeType(): Handles the "type" command.
+    private static void executeType(String[] tokens) {
+        if (tokens.length < 2) {
+            System.out.println("type: missing operand"); // Print an error if no command name is provided.
+            return;
+        }
+        String targetCommand = tokens[1]; // The command to check.
+        if (BUILTINS.contains(targetCommand)) {
+            System.out.println(targetCommand + " is a shell builtin"); // It's a built-in command.
+        } else {
+            String path = findExecutable(targetCommand); // Try to find the executable file.
+            System.out.println(targetCommand + (path != null ? " is " + path : " not found")); // Print the result.
+        }
+    }
+    
+    // executeCd(): Handles the "cd" command.
+    private static void executeCd(String[] tokens) {
+        if (tokens.length < 2) {
+            System.out.println("cd: missing operand"); // Error if no directory is given.
+            return;
+        }
+        String path = tokens[1].replace("~", System.getenv("HOME")); // Replace ~ with the home directory.
+        try {
+            Path resolvedPath = Paths.get(System.getProperty("user.dir")).resolve(path).normalize(); // Resolve the path.
+            File directory = resolvedPath.toFile(); // Get the File object.
+            if (directory.exists() && directory.isDirectory()) {
+                System.setProperty("user.dir", directory.getAbsolutePath()); // Change the current directory.
+            } else {
+                System.out.println("cd: " + path + ": No such file or directory"); // Error if the path is invalid.
+            }
+        } catch (Exception e) {
+            System.out.println("cd: " + path + ": Invalid path"); // Handle potential exceptions.
+        }
+    }
+    
+    // findExecutable(): Searches the PATH environment variable for an executable file.
+    private static String findExecutable(String command) {
+        String pathEnv = System.getenv("PATH"); // Get the PATH environment variable.
+        if (pathEnv == null)  // PATH is not set
+            return null;
+            
+        for (String dir : pathEnv.split(File.pathSeparator)) { // Split PATH into directories.
+            File file = new File(dir, command); // Create a File object for the command.
+            if (file.isFile() && file.canExecute())  // Check if it's a file and executable.
+                return file.getAbsolutePath(); // Return the absolute path.
+            }
+        return null; // Return null if not found.
+    }
 
-    // executeCd(): Handles the "cd" command.
-    private static void executeCd(String[] tokens) {
-        if (tokens.length < 2) {
-            System.out.println("cd: missing operand"); // Error if no directory is given.
-            return;
-        }
-        String path = tokens[1].replace("~", System.getenv("HOME")); // Replace ~ with the home directory.
-        try {
-            Path resolvedPath = Paths.get(System.getProperty("user.dir")).resolve(path).normalize(); // Resolve the path.
-            File directory = resolvedPath.toFile(); // Get the File object.
-            if (directory.exists() && directory.isDirectory()) {
-                System.setProperty("user.dir", directory.getAbsolutePath()); // Change the current directory.
-            } else {
-                System.out.println("cd: " + path + ": No such file or directory"); // Error if the path is invalid.
-            }
-        } catch (Exception e) {
-            System.out.println("cd: " + path + ": Invalid path"); // Handle potential exceptions.
-        }
-    }
+    // runExternalCommand(): Runs an external command using ProcessBuilder.
+    private static void runExternalCommand(String[] commandParts) {
+        try {
+            // Build the command list for ProcessBuilder.
+            List<String> processedArgs = new ArrayList<>();
+            processedArgs.add(commandParts[0]); // Add command name as-is.
+        
+            // Process remaining arguments (if any). Remove surrounding quotes.
+            for (int i = 1; i < commandParts.length; i++) {
+                String arg = commandParts[i];
+                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
+                    (arg.startsWith("'") && arg.endsWith("'"))) {
+                    arg = arg.substring(1, arg.length() - 1);
+                }
+                processedArgs.add(arg); // Add argument without processing escape sequences.
+            }
+            ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
+            pb.inheritIO(); // Inherit standard input/output streams.
+            Process process = pb.start(); // Start the process.
+            int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
+            if (exitCode != 0) {
+                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode); // Print error message.
+            }
+        } catch (IOException e) {
+            System.err.println(commandParts[0] + ": command not found or could not be executed"); // Handle IO exceptions.
+        } catch (InterruptedException e) {
+            System.err.println("Process interrupted"); // Handle interrupted exceptions.
+            Thread.currentThread().interrupt(); // Interrupt the current thread.
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
+        }
+    }
+    
+    // Splits the input string into tokens, handling quotes.
+    private static String[] splitPreservingQuotes(String input) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        char quoteChar = 0; // 0 means not in a quote, otherwise holds the quote character.
+        boolean escape = false; // True if the previous char was a backslash.
+        for (char c : input.toCharArray()) {
+            if (escape) {
+                currentToken.append(c); // Add the escaped char to the token.
+                escape = false; // Reset escape flag.
+            } else if (c == '\\') {
+                escape = true; // Set escape flag.
+            } else if ((c == ' ' || c == '\t') && quoteChar == 0) { // Space or tab outside quotes.
+                if (currentToken.length() > 0) {
+                    tokens.add(currentToken.toString()); // Add current token to the list.
+                    currentToken.setLength(0); // Reset current token.
+                }
+            } else if ((c == '\'' || c == '"') && quoteChar == 0) { // Start of a quote.
+                quoteChar = c; // Remember which quote char we're using.
+            } else if (c == quoteChar) { // End of a quote.
+                quoteChar = 0; // Reset quote char.
+            } else {
+                currentToken.append(c); // Add the char to the current token.
+            }
+        }
+        if (currentToken.length() > 0) {
+            tokens.add(currentToken.toString()); // Add the last token.
+        }
+        String[] tokenArray = tokens.toArray(new String[0]);
 
-    // findExecutable(): Searches the PATH environment variable for an executable file.
-    private static String findExecutable(String command) {
-        String pathEnv = System.getenv("PATH"); // Get the PATH environment variable.
-        if (pathEnv == null)  // PATH is not set
-            return null;
-        for (String dir : pathEnv.split(File.pathSeparator)) { // Split PATH into directories.
-            File file = new File(dir, command); // Create a File object for the command.
-            if (file.isFile() && file.canExecute())  // Check if it's a file and executable.
-                return file.getAbsolutePath(); // Return the absolute path.
-        }
-        return null; // Return null if not found.
-    }
-
-    // runExternalCommand(): Runs an external command using ProcessBuilder.
-    private static void runExternalCommand(String[] commandParts) {
-        try {
-            // Build the command list for ProcessBuilder.
-            List<String> processedArgs = new ArrayList<>();
-            processedArgs.add(commandParts[0]); // Add command name as-is.
-
-            // Process remaining arguments (if any). Remove surrounding quotes.
-            for (int i = 1; i < commandParts.length; i++) {
-                String arg = commandParts[i];
-                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
-                    (arg.startsWith("'") && arg.endsWith("'"))) {
-                    arg = arg.substring(1, arg.length() - 1);
-                }
-                processedArgs.add(arg); // Add argument without processing escape sequences.
-            }
-
-            ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
-            pb.inheritIO(); // Inherit standard input/output streams.
-            Process process = pb.start(); // Start the process.
-            int exitCode = process.waitFor(); // Wait for the process to finish and get the exit code.
-            if (exitCode != 0) {
-                System.err.println(commandParts[0] + ": command failed with exit code " + exitCode); // Print error message.
-            }
-        } catch (IOException e) {
-            System.err.println(commandParts[0] + ": command not found or could not be executed"); // Handle IO exceptions.
-        } catch (InterruptedException e) {
-            System.err.println("Process interrupted"); // Handle interrupted exceptions.
-            Thread.currentThread().interrupt(); // Interrupt the current thread.
-        } catch (Exception e) {
-            System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
-        }
-    }
-    // ... (BUILTINS, scanner, main, promptAndGetInput, executeCommand, 
-    //      executeEcho, executePwd, executeType, executeCd, findExecutable 
-    //      remain exactly the same as in the previous fully commented version)
-
-    // Splits the input string into tokens, handling quotes.
-    private static String[] splitPreservingQuotes(String input) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder currentToken = new StringBuilder();
-        char quoteChar = 0; // 0 means not in a quote, otherwise holds the quote character.
-        boolean escape = false; // True if the previous char was a backslash.
-
-        for (char c : input.toCharArray()) {
-            if (escape) {
-                currentToken.append(c); // Add the escaped char to the token.
-                escape = false; // Reset escape flag.
-            } else if (c == '\\') {
-                escape = true; // Set escape flag.
-            } else if ((c == ' ' || c == '\t') && quoteChar == 0) { // Space or tab outside quotes.
-                if (currentToken.length() > 0) {
-                    tokens.add(currentToken.toString()); // Add current token to the list.
-                    currentToken.setLength(0); // Reset current token.
-                }
-            } else if ((c == '\'' || c == '"') && quoteChar == 0) { // Start of a quote.
-                quoteChar = c; // Remember which quote char we're using.
-            } else if (c == quoteChar) { // End of a quote.
-                quoteChar = 0; // Reset quote char.
-            } else {
-                currentToken.append(c); // Add the char to the current token.
-            }
-        }
-
-        if (currentToken.length() > 0) {
-            tokens.add(currentToken.toString()); // Add the last token.
-        }
-
-        String[] tokenArray = tokens.toArray(new String[0]);
-
-        // Process escape sequences AFTER splitting:
-        for (int i = 0; i < tokenArray.length; i++) {
-            tokenArray[i] = processEscapeSequences(tokenArray[i]); // Process escape sequences in each token.
-        }
-
-        return tokenArray;
-    }
-
-    // Processes escape sequences within a string.
-    private static String processEscapeSequences(String input) {
-        StringBuilder output = new StringBuilder();
-        boolean isEscaped = false;
-
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-
-            if (isEscaped) {
-                switch (c) {
-                    case 'n': output.append("\n"); break; // Append newline.
-                    case 't': output.append("\t"); break; // Append tab.
-                    case 'r': output.append("\r"); break; // Append carriage return.
-                    case '\'': output.append("'"); break; // Append single quote.
-                    case '"': output.append("\""); break; // Append double quote.
-                    case '\\': output.append("\\"); break; // Append backslash.
-                    default: output.append(c); // Append the character as is (handles other escaped chars).
-                }
-                isEscaped = false; // Reset escape flag.
-            } else if (c == '\\') {
-                isEscaped = true; // Set escape flag.
-            } else {
-                output.append(c); // Append the character.
-            }
-        }
-        if (isEscaped) {
-            output.append('\\'); // Handle trailing backslash.
-        }
-        return output.toString();
-    }
+        // Process escape sequences AFTER splitting:
+        for (int i = 0; i < tokenArray.length; i++) {
+            tokenArray[i] = processEscapeSequences(tokenArray[i]); // Process escape sequences in each token.
+        }
+        return tokenArray;
+    }
+    
+    // Processes escape sequences within a string.
+    private static String processEscapeSequences(String input) {
+        StringBuilder output = new StringBuilder();
+        boolean isEscaped = false;
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (isEscaped) {
+                switch (c) {
+                    case 'n': output.append("\n"); break; // Append newline.
+                    case 't': output.append("\t"); break; // Append tab.
+                    case 'r': output.append("\r"); break; // Append carriage return.
+                    case '\'': output.append("'"); break; // Append single quote.
+                    case '"': output.append("\""); break; // Append double quote.
+                    case '\\': output.append("\\"); break; // Append backslash.
+                    default: output.append(c); // Append the character as is (handles other escaped chars).
+                }
+                isEscaped = false; // Reset escape flag.
+            } else if (c == '\\') {
+                isEscaped = true; // Set escape flag.
+            } else {
+                output.append(c); // Append the character.
+            }
+        }
+        if (isEscaped) {
+            output.append('\\'); // Handle trailing backslash.
+        }
+        return output.toString();
+    }
 }
