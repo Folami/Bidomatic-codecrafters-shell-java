@@ -22,7 +22,6 @@ public class Main {
         // signals the end of input (e.g., by pressing Ctrl+D).
         while (true) {
             String input = promptAndGetInput(); // Get a line of input from the user.
-            
             if (input == null)  // Check for end-of-input (Ctrl+D).  This signals that
                 break; // the user has finished providing input, so we exit the loop.
 
@@ -31,8 +30,8 @@ public class Main {
                                                           // containing spaces are treated as single units.
             if (tokens.length == 0)  // Check if the input was empty (e.g., user just pressed Enter).
                 continue; // If empty, go to the next iteration of the shell loop
-                          // without trying to execute anything.
-            executeCommand(tokens); // Execute the command specified by the tokens.
+                          // without trying to execute anything.
+                executeCommand(tokens); // Execute the command specified by the tokens.
             }
             scanner.close(); // Close the scanner to release any system resources it's using.
         }
