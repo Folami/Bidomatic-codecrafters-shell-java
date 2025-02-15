@@ -269,23 +269,3 @@ public class Main {
         return output.toString();
     }
 }
-
-import java.util.*;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.io.BufferedReader;
-import java.io.FileReader;
-
-public class Main {
-    // ... (BUILTINS, scanner, main, promptAndGetInput, executeCommand, 
-    //      executeEcho, executePwd, executeType, executeCd, findExecutable 
-    //      remain exactly the same as in the previous fully commented version)
-
-
-    
-
-    // ... (splitPreservingQuotes, processEscapeSequences remain exactly the same)
-
-}
