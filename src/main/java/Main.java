@@ -4,27 +4,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-
 public class Main {
-
     // BUILTINS: A set containing the names of commands that are built into the shell.
     // These commands are handled directly by the shell itself, rather than by running
     // external programs.  Using a Set allows for efficient checking if a command
     // is a built-in.
     private static final Set<String> BUILTINS = new HashSet<>(
-        Arrays.asList("echo", "exit", "type", "pwd", "cd")
+            Arrays.asList("echo", "exit", "type", "pwd", "cd")
     );
 
     // scanner: A Scanner object used to read input from the user.  It reads from
     // System.in, which is the standard input stream (usually the keyboard).
     private static final Scanner scanner = new Scanner(System.in);
 
-
     public static void main(String[] args) {
         // Main shell loop.  This loop continuously prompts the user for commands,
         // processes them, and repeats until the user enters the "exit" command or
         // signals the end of input (e.g., by pressing Ctrl+D).
-
         while (true) {
             String input = promptAndGetInput(); // Get a line of input from the user.
             if (input == null)  // Check for end-of-input (Ctrl+D).  This signals that
@@ -50,8 +46,6 @@ public class Main {
                                         // leading or trailing whitespace (spaces, tabs, etc.)
             : null; // Return null if there's no more input (end-of-file).
     }
-
-
 
     // executeCommand(): Determines what to do based on the command the user entered.
     private static void executeCommand(String[] tokens) {
@@ -131,7 +125,6 @@ public class Main {
         String pathEnv = System.getenv("PATH"); // Get the PATH environment variable.
         if (pathEnv == null)  // PATH is not set
             return null;
-
         for (String dir : pathEnv.split(File.pathSeparator)) { // Split PATH into directories.
             File file = new File(dir, command); // Create a File object for the command.
             if (file.isFile() && file.canExecute())  // Check if it's a file and executable.
@@ -146,6 +139,7 @@ public class Main {
             // Build the command list for ProcessBuilder.
             List<String> processedArgs = new ArrayList<>();
             processedArgs.add(commandParts[0]); // Add command name as-is.
+
             // Process remaining arguments (if any). Remove surrounding quotes.
             for (int i = 1; i < commandParts.length; i++) {
                 String arg = commandParts[i];
@@ -155,6 +149,7 @@ public class Main {
                 }
                 processedArgs.add(arg); // Add argument without processing escape sequences.
             }
+
             ProcessBuilder pb = new ProcessBuilder(processedArgs); // Create the ProcessBuilder.
             pb.inheritIO(); // Inherit standard input/output streams.
             Process process = pb.start(); // Start the process.
@@ -171,6 +166,9 @@ public class Main {
             System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
         }
     }
+    // ... (BUILTINS, scanner, main, promptAndGetInput, executeCommand, 
+    //      executeEcho, executePwd, executeType, executeCd, findExecutable 
+    //      remain exactly the same as in the previous fully commented version)
 
     // Splits the input string into tokens, handling quotes.
     private static String[] splitPreservingQuotes(String input) {
@@ -198,14 +196,18 @@ public class Main {
                 currentToken.append(c); // Add the char to the current token.
             }
         }
+
         if (currentToken.length() > 0) {
             tokens.add(currentToken.toString()); // Add the last token.
         }
+
         String[] tokenArray = tokens.toArray(new String[0]);
+
         // Process escape sequences AFTER splitting:
         for (int i = 0; i < tokenArray.length; i++) {
             tokenArray[i] = processEscapeSequences(tokenArray[i]); // Process escape sequences in each token.
         }
+
         return tokenArray;
     }
 
@@ -213,8 +215,10 @@ public class Main {
     private static String processEscapeSequences(String input) {
         StringBuilder output = new StringBuilder();
         boolean isEscaped = false;
+
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
+
             if (isEscaped) {
                 switch (c) {
                     case 'n': output.append("\n"); break; // Append newline.
