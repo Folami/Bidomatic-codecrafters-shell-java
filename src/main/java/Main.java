@@ -133,7 +133,8 @@ public class Main {
                 String filePath = tokens[i];
                 File file = new File(filePath);
                 // if (file.exists() && file.isFile()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(file))
                     String line;
                     while ((line = reader.readLine()) != null) {
                         concatenatedOutput.append(line);
