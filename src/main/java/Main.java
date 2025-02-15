@@ -127,7 +127,6 @@ public class Main {
             System.out.println("cat: missing operand");
             return;
         }
-
         try {
             StringBuilder concatenatedOutput = new StringBuilder();
             for (int i = 1; i < tokens.length; i++) {
@@ -138,7 +137,7 @@ public class Main {
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
-                            concatenatedOutput.append(line).append("\n");
+                            concatenatedOutput.append(line);
                         }
                     }
                 } else {
