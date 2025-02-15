@@ -132,12 +132,12 @@ public class Main {
             for (int i = 1; i < tokens.length; i++) {
                 String filePath = tokens[i];
                 File file = new File(filePath);
-
                 if (file.exists() && file.isFile()) {
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
                             concatenatedOutput.append(line);
+                            System.out.println("concatenated");
                         }
                     }
                 } else {
