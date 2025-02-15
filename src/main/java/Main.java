@@ -17,59 +17,60 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     
     public static void main(String[] args) {
-        // Main shell loop.  This loop continuously prompts the user for commands,
-        // processes them, and repeats until the user enters the "exit" command or
-        // signals the end of input (e.g., by pressing Ctrl+D).
-        while (true) {
-            String input = promptAndGetInput(); // Get a line of input from the user.
-            if (input == null)  // Check for end-of-input (Ctrl+D).  This signals that
-                break; // the user has finished providing input, so we exit the loop.
-            String[] tokens = splitPreservingQuotes(input); // Split the input into tokens,
+        // Main shell loop.  This loop continuously prompts the user for commands,
+        // processes them, and repeats until the user enters the "exit" command or
+        // signals the end of input (e.g., by pressing Ctrl+D).
+        while (true) {
+            String input = promptAndGetInput(); // Get a line of input from the user.
+            if (input == null)  // Check for end-of-input (Ctrl+D).  This signals that
+                break; // the user has finished providing input, so we exit the loop.
+
+            String[] tokens = splitPreservingQuotes(input); // Split the input into tokens,
                                                           // respecting quotes so that arguments
                                                           // containing spaces are treated as single units.
-            if (tokens.length == 0)  // Check if the input was empty (e.g., user just pressed Enter).
-                continue; // If empty, go to the next iteration of the shell loop
+            if (tokens.length == 0)  // Check if the input was empty (e.g., user just pressed Enter).
+                continue; // If empty, go to the next iteration of the shell loop
                           // without trying to execute anything.
-            executeCommand(tokens); // Execute the command specified by the tokens.
-        }
-        scanner.close(); // Close the scanner to release any system resources it's using.
-    }
-
-    // promptAndGetInput(): Prints the shell prompt ("$ ") and reads a line of input
-    // from the user.
-    private static String promptAndGetInput() {
-        System.out.print("$ "); // Print the shell prompt to indicate it's ready for input.
-        return scanner.hasNextLine()  // Check if there's more input available.  This is a non-blocking
+            executeCommand(tokens); // Execute the command specified by the tokens.
+            }
+            scanner.close(); // Close the scanner to release any system resources it's using.
+        }
+        
+    // promptAndGetInput(): Prints the shell prompt ("$ ") and reads a line of input
+    // from the user.
+    private static String promptAndGetInput() {
+        System.out.print("$ "); // Print the shell prompt to indicate it's ready for input.
+        return scanner.hasNextLine()  // Check if there's more input available.  This is a non-blocking
                                     // call; it returns immediately.
-            ? scanner.nextLine().trim() // Read the line of input, and then .trim() removes any
+            ? scanner.nextLine().trim() // Read the line of input, and then .trim() removes any
                                         // leading or trailing whitespace (spaces, tabs, etc.)
-            : null; // Return null if there's no more input (end-of-file).
-    }
-
-    // executeCommand(): Determines what to do based on the command the user entered.
-    private static void executeCommand(String[] tokens) {
-        String command = tokens[0]; // The first token is the command name.
-        if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
-            System.exit(0); // Exit the shell if the command is "exit 0".  A non-zero
+            : null; // Return null if there's no more input (end-of-file).
+    }
+    
+    // executeCommand(): Determines what to do based on the command the user entered.
+    private static void executeCommand(String[] tokens) {
+        String command = tokens[0]; // The first token is the command name.
+        if (command.equals("exit") && tokens.length > 1 && tokens[1].equals("0")) {
+            System.exit(0); // Exit the shell if the command is "exit 0".  A non-zero
                            // exit code could be used to indicate an error, but this
                            // simple shell always exits with 0 (success).
-        } else if (command.equals("echo")) {
-            executeEcho(tokens); // Execute the echo command.
-        } else if (command.equals("pwd")) {
-            executePwd(); // Execute the pwd (print working directory) command.
-        } else if (command.equals("type")) {
-            executeType(tokens); // Execute the type command (tells whether a command is
+        } else if (command.equals("echo")) {
+            executeEcho(tokens); // Execute the echo command.
+        } else if (command.equals("pwd")) {
+            executePwd(); // Execute the pwd (print working directory) command.
+        } else if (command.equals("type")) {
+            executeType(tokens); // Execute the type command (tells whether a command is
                                 // a built-in or an external program).
-        } else if (command.equals("cd")) {
-            executeCd(tokens); // Execute the cd (change directory) command.
-        } else {
-            runExternalCommand(tokens); // If the command is not a built-in, try to run it
+        } else if (command.equals("cd")) {
+            executeCd(tokens); // Execute the cd (change directory) command.
+        } else {
+            runExternalCommand(tokens); // If the command is not a built-in, try to run it
                                         // as an external program.
-        }
-    }
+        }
+    }
 
     // executeEcho(): Handles the "echo" command.
-    private static void executeEcho(String[] tokens) {
+    private static void executeEcho(String[] tokens) {
         if (tokens.length > 1) {
             System.out.println(String.join(" ", Arrays.copyOfRange(tokens, 1, tokens.length))); // Print the arguments, joined by spaces.
         } else {
