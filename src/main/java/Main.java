@@ -138,7 +138,7 @@ public class Main {
                     while ((line = reader.readLine()) != null) {
                         concatenatedOutput.append(line);
                     }
-                } else {
+                } catch {
                     System.err.println("cat: " + filePath + ": No such file or directory");
                     return; // Important: Exit if ANY file is not found.
                 }
