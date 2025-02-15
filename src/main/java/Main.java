@@ -22,6 +22,7 @@ public class Main {
         // signals the end of input (e.g., by pressing Ctrl+D).
         while (true) {
             String input = promptAndGetInput(); // Get a line of input from the user.
+            
             if (input == null)  // Check for end-of-input (Ctrl+D).  This signals that
                 break; // the user has finished providing input, so we exit the loop.
 
