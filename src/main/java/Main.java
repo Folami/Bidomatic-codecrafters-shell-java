@@ -3,9 +3,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.io.BufferedReader;
 
 public class Main {
     // BUILTINS: A set containing the names of commands that are built into the shell.
@@ -66,8 +63,6 @@ public class Main {
                                 // a built-in or an external program).
         } else if (command.equals("cd")) {
             executeCd(tokens); // Execute the cd (change directory) command.
-        } else if (command.equals("cat")) {
-            executeCat(tokens); // Use our customized cat implementation.
         } else {
             runExternalCommand(tokens); // If the command is not a built-in, try to run it
                                         // as an external program.
@@ -125,26 +120,6 @@ public class Main {
         }
     }
 
-    // executeCat(): Customized implementation for the "cat" command.
-    private static void executeCat(String[] tokens) {
-        if (tokens.length < 2) {
-            System.err.println("cat: missing operand");
-            return;
-        }
-        for (int i = 1; i < tokens.length; i++) {
-            String filename = processEscapeSequences(tokens[i]);
-            try {
-                Path path = Paths.get(filename);
-                List<String> lines = Files.readAllLines(path);
-                for (String line : lines) {
-                    System.out.println(line + "cgcgycgc");
-                }
-            } catch (IOException e) {
-                System.err.println("cat: " + filename + ": " + e.getMessage());
-            }
-        }
-    }
-
     // findExecutable(): Searches the PATH environment variable for an executable file.
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH"); // Get the PATH environment variable.
@@ -182,17 +157,13 @@ public class Main {
             System.err.println("An unexpected error occurred: " + e.getMessage()); // Handle other exceptions.
         }
     }
-    // ... (BUILTINS, scanner, main, promptAndGetInput, executeCommand, 
-    //      executeEcho, executePwd, executeType, executeCd, findExecutable 
-    //      remain exactly the same as in the previous fully commented version)
 
-    // Splits the input string into tokens, handling quotes.
+    // Splits the input string into tokens, handling quotes and backslash escapes.
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
         StringBuilder currentToken = new StringBuilder();
         char quoteChar = 0; // 0 means not in a quote, otherwise holds the quote character.
         boolean escape = false; // True if the previous char was a backslash.
-
         for (char c : input.toCharArray()) {
             if (escape) {
                 currentToken.append(c); // Add the escaped char to the token.
