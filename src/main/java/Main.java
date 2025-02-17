@@ -140,7 +140,7 @@ public class Main {
                         while ((line = reader.readLine()) != null) {
                             // Append the line without adding an extra newline
                             // so that the final output matches the expected result.
-                            concatenatedOutput.append(line);
+                            concatenatedOutput.append(line).append("\n");
                         }
                     }
                 } else {
