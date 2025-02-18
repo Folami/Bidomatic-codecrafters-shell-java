@@ -196,7 +196,7 @@ public class Main {
             // Process remaining arguments (if any). Remove surrounding quotes.
             for (int i = 1; i < commandParts.length; i++) {
                 String arg = commandParts[i];
-                if ((arg.startsWith(""") && arg.endsWith(""")) ||
+                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
                     (arg.startsWith("'") && arg.endsWith("'"))) {
                     arg = arg.substring(1, arg.length() - 1);
                 }
