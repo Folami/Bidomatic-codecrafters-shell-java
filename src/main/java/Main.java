@@ -177,11 +177,11 @@ public class Main {
             return; // Cat is handled separately.
         }
         try {
+            /*
             List<String> command = new ArrayList<>();
             command.add("/bin/sh");
             command.add("-c");
             StringBuilder cmd = new StringBuilder();
-
             for (int i = 0; i < commandParts.length; i++) {
                 cmd.append(commandParts[i]);
                 if (i < commandParts.length - 1) {
@@ -189,8 +189,20 @@ public class Main {
                 }
             }
             command.add(cmd.toString());
-
-            ProcessBuilder pb = new ProcessBuilder(command);
+            */
+            // Build the command list for ProcessBuilder.
+            List<String> processedArgs = new ArrayList<>();
+            processedArgs.add(commandParts[0]); // Add command name as-is.
+            // Process remaining arguments (if any). Remove surrounding quotes.
+            for (int i = 1; i < commandParts.length; i++) {
+                String arg = commandParts[i];
+                if ((arg.startsWith("\"") && arg.endsWith("\"")) ||
+                    (arg.startsWith("'") && arg.endsWith("'"))) {
+                    arg = arg.substring(1, arg.length() - 1);
+                }
+                processedArgs.add(arg); // Add argument without processing escape sequences.
+            }
+            ProcessBuilder pb = new ProcessBuilder(processedArgs);
             pb.inheritIO();
             Process process = pb.start();
             int exitCode = process.waitFor();
@@ -206,7 +218,7 @@ public class Main {
             System.err.println("An unexpected error occurred: " + e.getMessage());
         }
     }
-    
+
     // Splits the input string into tokens, handling quotes.
     private static String[] splitPreservingQuotes(String input) {
         List<String> tokens = new ArrayList<>();
