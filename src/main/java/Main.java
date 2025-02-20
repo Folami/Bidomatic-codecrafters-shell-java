@@ -50,8 +50,16 @@ public class Main {
             } else if (c == '\\') {
                 escape = true;
             } else if (c == '\'' && !doubleQuote) {
+                if (singleQuote) {
+                   tokens.add(current.toString());
+                   current.setLength(0);
+                }
                 singleQuote = !singleQuote;
             } else if (c == '"' && !singleQuote) {
+                if (doubleQuote) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                }
                 doubleQuote = !doubleQuote;
             } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
                 if (current.length() > 0) {
@@ -96,35 +104,35 @@ public class Main {
     }
 
     public void executeEcho(List<String> args) {
-        if (args.length == 0) {
+        if (args.isEmpty()) {
             System.out.println();
             return;
         }
         boolean suppressNewline = false;
         int startIndex = 0;
         // Check for the -n flag
-        if (args[0].equals("-n")) {
+        if (args.get(0).equals("-n")) {
             suppressNewline = true;
             startIndex = 1;
         }
         joinEchoArgs(args, startIndex, suppressNewline);
     }
 
-    private void joinEchoArgs(String[] args, int startIndex, boolean suppressNewline) {
+    private void joinEchoArgs(List<String> args, int startIndex, boolean suppressNewline) {
         // Join the arguments into a single string
         StringBuilder output = new StringBuilder();
-        for (int i = startIndex; i < args.length; i++) {
-            if (args[i].equals(">") && i + 1 < args.length) {
+        for (int i = startIndex; i < args.size(); i++) {
+            if (args.get(i).equals(">") && i + 1 < args.size()) {
                 // Handle output redirection
-                String filePath = args[i + 1];
+                String filePath = args.get(i + 1);
                 filePath = filePath.replace("\\n", "\n")
                                    .replace("\\t", "\t")
                                    .replace("\\\\", "\\");
                 writeFile(output.toString(), filePath, suppressNewline);
                 return;
             }
-            output.append(args[i]);
-            if (i < args.length - 1) {
+            output.append(args.get(i));
+            if (i < args.size() - 1) {
                 output.append(" ");
             }
         }
