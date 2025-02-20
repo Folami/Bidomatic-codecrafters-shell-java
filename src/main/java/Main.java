@@ -33,10 +33,10 @@ public class Main {
             if (tokens.length == 0) // Check if the input was empty (e.g., user just pressed Enter).
                 continue; // If empty, go to the next iteration of the shell loop
                           // without trying to execute anything.
-                executeCommand(tokens); // Execute the command specified by the tokens.
-            }
-            scanner.close(); // Close the scanner to release any system resources it's using.
+            executeCommand(tokens); // Execute the command specified by the tokens.
         }
+            scanner.close(); // Close the scanner to release any system resources it's using.
+    }
         
     // promptAndGetInput(): Prints the shell prompt ("$ ") and reads a line of input
     // from the user.
