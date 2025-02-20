@@ -118,7 +118,7 @@ public class Main {
         joinEchoArgs(args, startIndex, suppressNewline);
     }
 
-    private void joinEchoArgs(List<String> args, int startIndex, boolean suppressNewline) {
+    private static void joinEchoArgs(List<String> args, int startIndex, boolean suppressNewline) {
         // Join the arguments into a single string
         StringBuilder output = new StringBuilder();
         for (int i = startIndex; i < args.size(); i++) {
@@ -144,7 +144,7 @@ public class Main {
         }        
     }
 
-    private void writeFile(String content, String filePath, boolean suppressNewline) {
+    private static void writeFile(String content, String filePath, boolean suppressNewline) {
         Path path = Paths.get(filePath);
         try {
             // Create parent directories if they don't exist
