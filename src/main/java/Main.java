@@ -103,7 +103,7 @@ public class Main {
         System.exit(0);
     }
 
-    public void executeEcho(List<String> args) {
+    public static void executeEcho(List<String> args) {
         if (args.isEmpty()) {
             System.out.println();
             return;
