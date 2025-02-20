@@ -95,37 +95,62 @@ public class Main {
         System.exit(0);
     }
 
-    private static void executeEcho(List<String> args) {
-        if (args.contains("-n")) {
-            args.remove("-n");
-            String output = String.join(" ", args);
+    public void executeEcho(String[] args) {
+        if (args.length == 0) {
+            System.out.println();
+            return;
+        }
+        boolean suppressNewline = false;
+        int startIndex = 0;
+        // Check for the -n flag
+        if (args[0].equals("-n")) {
+            suppressNewline = true;
+            startIndex = 1;
+        }
+        joinEchoArgs(args, startIndex, suppressNewline);
+    }
 
-            // Check for redirection (>)
-            int redirectionIndex = args.indexOf(">");
-            if (redirectionIndex != -1) {
-                if (redirectionIndex + 1 < args.size()) {
-                    String filePath = args.get(redirectionIndex + 1);
-                    try {
-                        // Create necessary directories
-                        Path parentDir = Paths.get(filePath).getParent();
-                        if (parentDir != null) {  //check if parent directory exists
-                            Files.createDirectories(parentDir);
-                        }
-
-                        try (PrintWriter writer = new PrintWriter(filePath)) {
-                            writer.print(output);
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Error redirecting output: " + e.getMessage());
-                    }
-                } else {
-                    System.err.println("Error: Missing filename after redirection.");
-                }
-            } else {
-                System.out.print(output); // No redirection, print to console
+    private void joinEchoArgs(String[] args, int startIndex, boolean suppressNewline) {
+        // Join the arguments into a single string
+        StringBuilder output = new StringBuilder();
+        for (int i = startIndex; i < args.length; i++) {
+            if (args[i].equals(">") && i + 1 < args.length) {
+                // Handle output redirection
+                String filePath = args[i + 1];
+                filePath = filePath.replace("\\n", "\n")
+                                   .replace("\\t", "\t")
+                                   .replace("\\\\", "\\");
+                writeFile(output.toString(), filePath, suppressNewline);
+                return;
             }
+            output.append(args[i]);
+            if (i < args.length - 1) {
+                output.append(" ");
+            }
+        }
+        // If no redirection, print to console
+        if (suppressNewline) {
+            System.out.print(output.toString());
         } else {
-            System.out.println(String.join(" ", args)); // No -n, print to console
+            System.out.println(output.toString());
+        }        
+    }
+
+    private void writeFile(String content, String filePath, boolean suppressNewline) {
+        Path path = Paths.get(filePath);
+        try {
+            // Create parent directories if they don't exist
+            Files.createDirectories(path.getParent());
+
+            // Write content to the file
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(path.toFile()))) {
+                writer.write(content);
+                if (!suppressNewline) {
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
         }
     }
 
