@@ -95,7 +95,7 @@ public class Main {
         System.exit(0);
     }
 
-    public void executeEcho(String[] args) {
+    public void executeEcho(List<String> args) {
         if (args.length == 0) {
             System.out.println();
             return;
