@@ -149,7 +149,6 @@ public class Main {
         try {
             // Create parent directories if they don't exist
             Files.createDirectories(path.getParent());
-
             // Write content to the file
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(path.toFile()))) {
                 writer.write(content);
