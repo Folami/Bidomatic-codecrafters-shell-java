@@ -12,7 +12,8 @@ public class Main {
                 continue;
             }
             try {
-                List<String> tokens = manualTokenize(commandLine);
+                Tokenizer tokenizer = new Tokenizer();
+                List<String> tokens = tokenizer.manualTokenize(commandLine);
                 if (tokens.isEmpty()) {
                     continue;
                 }
@@ -34,46 +35,6 @@ public class Main {
         } catch (IOException e) {
             return "";
         }
-    }
-
-    private static List<String> manualTokenize(String cmdLine) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean singleQuote = false;
-        boolean doubleQuote = false;
-        boolean escape = false;
-
-        for (char c : cmdLine.toCharArray()) {
-            if (escape) {
-                current.append(c);
-                escape = false;
-            } else if (c == '\\') {
-                escape = true;
-            } else if (c == '\'' && !doubleQuote) {
-                if (singleQuote) {
-                   tokens.add(current.toString());
-                   current.setLength(0);
-                }
-                singleQuote = !singleQuote;
-            } else if (c == '"' && !singleQuote) {
-                if (doubleQuote) {
-                    tokens.add(current.toString());
-                    current.setLength(0);
-                }
-                doubleQuote = !doubleQuote;
-            } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
-                if (current.length() > 0) {
-                    tokens.add(current.toString());
-                    current.setLength(0);
-                }
-            } else {
-                current.append(c);
-            }
-        }
-        if (current.length() > 0) {
-            tokens.add(current.toString());
-        }
-        return tokens;
     }
 
     private static void executeCommand(String command, List<String> args) throws IOException {
@@ -236,5 +197,78 @@ public class Main {
 }
 
 
+public static class Tokenizer {
 
+    private static List<String> tokens;
+    private static StringBuilder current;
+    private static boolean singleQuote;
+    private static boolean doubleQuote;
+    private static boolean escape;
 
+    public static List<String> manualTokenize(String cmdLine) {
+        tokens = new ArrayList<>();
+        current = new StringBuilder();
+        singleQuote = false;
+        doubleQuote = false;
+        escape = false;
+
+        for (char c : cmdLine.toCharArray()) {
+            processCharacter(c);
+        }
+
+        finalizeToken();
+        return tokens;
+    }
+
+    private static void processCharacter(char c) {
+        if (escape) {
+            handleEscapeCharacter(c);
+        } else if (c == '\\') {
+            escape = true;
+        } else if (c == '\'' && !doubleQuote) {
+            handleSingleQuote();
+        } else if (c == '"' && !singleQuote) {
+            handleDoubleQuote();
+        } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
+            handleWhitespace();
+        } else {
+            current.append(c);
+        }
+    }
+
+    private static void handleEscapeCharacter(char c) {
+        current.append(c);
+        escape = false;
+    }
+
+    private static void handleSingleQuote() {
+        if (singleQuote) {
+            addToken();
+        }
+        singleQuote = !singleQuote;
+    }
+
+    private static void handleDoubleQuote() {
+        if (doubleQuote) {
+            addToken();
+        }
+        doubleQuote = !doubleQuote;
+    }
+
+    private static void handleWhitespace() {
+        if (current.length() > 0) {
+            addToken();
+        }
+    }
+
+    private static void addToken() {
+        tokens.add(current.toString());
+        current.setLength(0);
+    }
+
+    private static void finalizeToken() {
+        if (current.length() > 0) {
+            addToken();
+        }
+    }
+}
