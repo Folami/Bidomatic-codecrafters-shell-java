@@ -5,6 +5,82 @@ import java.util.*;
 public class Main {
     private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
 
+    private static class Tokenizer {
+
+        private static List<String> tokens;
+        private static StringBuilder current;
+        private static boolean singleQuote;
+        private static boolean doubleQuote;
+        private static boolean escape;
+
+        public static List<String> manualTokenize(String cmdLine) {
+            tokens = new ArrayList<>();
+            current = new StringBuilder();
+            singleQuote = false;
+            doubleQuote = false;
+            escape = false;
+
+            for (char c : cmdLine.toCharArray()) {
+                processCharacter(c);
+            }
+
+            finalizeToken();
+            return tokens;
+        }
+
+        private static void processCharacter(char c) {
+            if (escape) {
+                handleEscapeCharacter(c);
+            } else if (c == '\\') {
+                escape = true;
+            } else if (c == '\'' && !doubleQuote) {
+                handleSingleQuote();
+            } else if (c == '"' && !singleQuote) {
+                handleDoubleQuote();
+            } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
+                handleWhitespace();
+            } else {
+                current.append(c);
+            }
+        }
+
+        private static void handleEscapeCharacter(char c) {
+            current.append(c);
+            escape = false;
+        }
+
+        private static void handleSingleQuote() {
+            if (singleQuote) {
+                addToken();
+            }
+            singleQuote = !singleQuote;
+        }
+
+        private static void handleDoubleQuote() {
+            if (doubleQuote) {
+                addToken();
+            }
+            doubleQuote = !doubleQuote;
+        }
+
+        private static void handleWhitespace() {
+            if (current.length() > 0) {
+                addToken();
+            }
+        }
+
+        private static void addToken() {
+            tokens.add(current.toString());
+            current.setLength(0);
+        }
+
+        private static void finalizeToken() {
+            if (current.length() > 0) {
+                addToken();
+            }
+        }
+    }
+
     public static void main(String[] args) {
         while (true) {
             String commandLine = inputPrompt();
@@ -197,78 +273,3 @@ public class Main {
 }
 
 
-public static class Tokenizer {
-
-    private static List<String> tokens;
-    private static StringBuilder current;
-    private static boolean singleQuote;
-    private static boolean doubleQuote;
-    private static boolean escape;
-
-    public static List<String> manualTokenize(String cmdLine) {
-        tokens = new ArrayList<>();
-        current = new StringBuilder();
-        singleQuote = false;
-        doubleQuote = false;
-        escape = false;
-
-        for (char c : cmdLine.toCharArray()) {
-            processCharacter(c);
-        }
-
-        finalizeToken();
-        return tokens;
-    }
-
-    private static void processCharacter(char c) {
-        if (escape) {
-            handleEscapeCharacter(c);
-        } else if (c == '\\') {
-            escape = true;
-        } else if (c == '\'' && !doubleQuote) {
-            handleSingleQuote();
-        } else if (c == '"' && !singleQuote) {
-            handleDoubleQuote();
-        } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
-            handleWhitespace();
-        } else {
-            current.append(c);
-        }
-    }
-
-    private static void handleEscapeCharacter(char c) {
-        current.append(c);
-        escape = false;
-    }
-
-    private static void handleSingleQuote() {
-        if (singleQuote) {
-            addToken();
-        }
-        singleQuote = !singleQuote;
-    }
-
-    private static void handleDoubleQuote() {
-        if (doubleQuote) {
-            addToken();
-        }
-        doubleQuote = !doubleQuote;
-    }
-
-    private static void handleWhitespace() {
-        if (current.length() > 0) {
-            addToken();
-        }
-    }
-
-    private static void addToken() {
-        tokens.add(current.toString());
-        current.setLength(0);
-    }
-
-    private static void finalizeToken() {
-        if (current.length() > 0) {
-            addToken();
-        }
-    }
-}
