@@ -137,7 +137,7 @@ public class Main {
     }
 }
 
-public class Shlex {
+class Shlex {
 
     // The states of our tokenizer
     private enum State {
