@@ -110,6 +110,11 @@ public class Main {
         }
 
         String newDir = args.get(0);
+
+        if (newDir.startsWith("~")) {
+            newDir = System.getProperty("user.home") + newDir.substring(1);
+        }
+
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
         try {
             System.setProperty("user.dir", path.toString());
