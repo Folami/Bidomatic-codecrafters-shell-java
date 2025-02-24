@@ -1,16 +1,8 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
-public class MyShell {
-
+public class Main {
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
     public static void main(String[] args) {
