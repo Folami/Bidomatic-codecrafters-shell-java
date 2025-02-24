@@ -1,10 +1,19 @@
-import java.io.*;
-import java.util.*;
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Main {
-    private static final Set<String> SH_BUILTINS = new HashSet<>(Arrays.asList("echo", "exit", "type", "pwd", "cd"));
-    private static final Scanner scanner = new Scanner(System.in);
+
+    private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
     public static void main(String[] args) {
         while (true) {
@@ -14,8 +23,8 @@ public class Main {
             }
 
             try {
-                List<String> tokens = Shlex.split(commandLine);
-                if (tokens.isEmpty()) {
+                List<String> tokens = Shlex.split(commandLine, true, true);
+                if (tokens == null || tokens.isEmpty()) {
                     continue;
                 }
 
@@ -23,18 +32,26 @@ public class Main {
                 List<String> commandArgs = tokens.subList(1, tokens.size());
 
                 executeCommand(command, commandArgs);
-            } catch (Exception e) {
+
+            } catch (IllegalArgumentException e) {
                 System.out.println("Error parsing command: " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("An error occurred: " + e.getMessage());
             }
         }
     }
 
     private static String inputPrompt() {
         System.out.print("$ ");
-        return scanner.hasNextLine() ? scanner.nextLine() : "exit";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
-    private static void executeCommand(String command, List<String> args) {
+    private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
             case "exit":
                 exitShell();
@@ -53,11 +70,16 @@ public class Main {
                 break;
             default:
                 runExternalCommand(command, args);
+                break;
         }
     }
 
     private static void exitShell() {
         System.exit(0);
+    }
+
+    private static void executeEcho(List<String> args) {
+        System.out.println(String.join(" ", args));
     }
 
     private static void executeType(List<String> args) {
@@ -67,7 +89,7 @@ public class Main {
         }
 
         String targetCommand = args.get(0);
-        if (SH_BUILTINS.contains(targetCommand)) {
+        if (shBuiltins.contains(targetCommand)) {
             System.out.println(targetCommand + " is a shell builtin");
         } else {
             String executable = findExecutable(targetCommand);
@@ -83,23 +105,18 @@ public class Main {
         System.out.println(System.getProperty("user.dir"));
     }
 
-    private static void executeEcho(List<String> args) {
-        System.out.println(String.join(" ", args));
-    }
-
-    private static void executeCd(List<String> args) {
+    private static void executeCd(List<String> args) throws IOException {
         if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
 
-        String newDir = args.get(0).replace("~", System.getProperty("user.home"));
-        File dir = new File(newDir);
-
-        if (dir.isDirectory()) {
-            System.setProperty("user.dir", dir.getAbsolutePath());
-        } else {
-            System.out.println("cd: " + newDir + ": No such directory");
+        String newDir = args.get(0);
+        Path path = Paths.get(newDir).toAbsolutePath().normalize();
+        try {
+            System.setProperty("user.dir", path.toString());
+        } catch (Exception e) {
+            System.out.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
 
@@ -107,115 +124,130 @@ public class Main {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
             for (String dir : pathEnv.split(File.pathSeparator)) {
-                File file = new File(dir, command);
-                if (file.isFile() && file.canExecute()) {
-                    return file.getAbsolutePath();
+                Path filePath = Paths.get(dir, command);
+                if (Files.isExecutable(filePath)) {
+                    return filePath.toString();
                 }
             }
         }
         return null;
     }
 
-    private static void runExternalCommand(String command, List<String> args) {
-        try {
-            List<String> fullCommand = new ArrayList<>();
-            fullCommand.add(command);
-            fullCommand.addAll(args);
+    private static void runExternalCommand(String command, List<String> args) throws IOException {
+        List<String> commandWithArgs = new ArrayList<>();
+        commandWithArgs.add(command);
+        commandWithArgs.addAll(args);
 
-            ProcessBuilder pb = new ProcessBuilder(fullCommand);
-            pb.inheritIO();
-            Process process = pb.start();
-            int exitCode = process.waitFor();
+        ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
+        processBuilder.redirectErrorStream(true);
 
-            if (exitCode != 0) {
-                System.err.println(command + ": command failed with exit code " + exitCode);
+        Process process = processBuilder.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
             }
         } catch (IOException e) {
-            System.err.println(command + ": command not found");
-        } catch (InterruptedException e) {
-            System.err.println(command + ": command interrupted");
-        }
-    }
-}
-
-
-class Shlex {
-
-    private StringReader instream;
-    private String infile;
-    private boolean posix;
-    private String eof;
-    private String commenters = "#";
-    private String wordchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    private String whitespace = " \t\r\n";
-    private boolean whitespaceSplit = false;
-    private String quotes = "'\"";
-    private String escape = "\\";
-    private String escapedquotes = "\"";
-    private String state = " ";
-    private Deque<String> pushback = new LinkedList<>();
-    private int lineno = 1;
-    private int debug = 0;
-    private String token = "";
-    private Deque<Object[]> filestack = new LinkedList<>();
-    private String source = null;
-    private String punctuationChars = "";
-    private Deque<Character> pushbackChars = new LinkedList<>();
-
-    public Shlex(String instream, String infile, boolean posix, String punctuationChars) {
-        this.instream = new StringReader(instream);
-        this.infile = infile;
-        this.posix = posix;
-        this.punctuationChars = punctuationChars == null ? "" : punctuationChars;
-        if (posix) {
-            this.eof = null;
-        } else {
-            this.eof = "";
-        }
-        if (posix) {
-            this.wordchars += "ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ";
-        }
-        if (!this.punctuationChars.isEmpty()) {
-            this.wordchars += "~-./*?=";
-            for (char c : this.punctuationChars.toCharArray()) {
-                this.wordchars = this.wordchars.replace(String.valueOf(c), "");
+            System.out.println(command + ": " + e.getMessage());
+        } finally {
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                System.out.println(command + ": " + e.getMessage());
             }
+
         }
     }
 
-    public List<String> split() throws IOException {
-        List<String> tokens = new ArrayList<>();
-        while (true) {
-            String token = get_token();
-            if (token == null) {
-                break;
+    public static class Shlex {
+
+        public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
+            if (s == null) {
+                throw new IllegalArgumentException("s argument must not be null");
             }
-            tokens.add(token);
-        }
-        return tokens;
-    }
-
-    private void push_token(String tok) {
-        if (debug >= 1) {
-            System.out.println("shlex: pushing token " + tok);
-        }
-        pushback.addFirst(tok);
-    }
-
-    private String get_token() throws IOException {
-        if (!pushback.isEmpty()) {
-            String tok = pushback.removeFirst();
-            if (debug >= 1) {
-                System.out.println("shlex: popping token " + tok);
+            Shlex lex = new Shlex(s, null, posix, null);
+            lex.whitespaceSplit = true;
+            if (!comments) {
+                lex.commenters = "";
             }
-            return tok;
+            return lex.split();
         }
-        String raw = read_token();
-        while (raw != null && raw.equals(eof)) {
-            if (filestack.isEmpty()) {
-                return eof;
+
+        private StringReader instream;
+        private String infile;
+        private boolean posix;
+        private String eof;
+        private String commenters = "#";
+        private String wordchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+        private String whitespace = " \t\r\n";
+        private boolean whitespaceSplit = false;
+        private String quotes = "'\"";
+        private String escape = "\\";
+        private String escapedquotes = "\"";
+        private String state = " ";
+        private Deque<String> pushback = new LinkedList<>();
+        private int lineno = 1;
+        private int debug = 0;
+        private String token = "";
+        private Deque<Object[]> filestack = new LinkedList<>();
+        private String source = null;
+        private String punctuationChars = "";
+        private Deque<Character> pushbackChars = new LinkedList<>();
+
+        public Shlex(String instream, String infile, boolean posix, String punctuationChars) {
+            this.instream = new StringReader(instream);
+            this.infile = infile;
+            this.posix = posix;
+            this.punctuationChars = punctuationChars == null ? "" : punctuationChars;
+            if (posix) {
+                this.eof = null;
             } else {
-                pop_source();
+                this.eof = "";
+            }
+            if (posix) {
+                this.wordchars += "ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ";
+            }
+            if (!this.punctuationChars.isEmpty()) {
+                this.wordchars += "~-./*?=";
+                for (char c : this.punctuationChars.toCharArray()) {
+                    this.wordchars = this.wordchars.replace(String.valueOf(c), "");
+                }
+            }
+        }
+
+        public List<String> split() throws IOException {
+            List<String> tokens = new ArrayList<>();
+            while (true) {
+                String token = get_token();
+                if (token == null) {
+                    break;
+                }
+                tokens.add(token);
+            }
+            return tokens;
+        }
+
+        private void push_token(String tok) {
+            if (debug >= 1) {
+                System.out.println("shlex: pushing token " + tok);
+            }
+            pushback.addFirst(tok);
+        }
+
+        private String get_token() throws IOException {
+            if (!pushback.isEmpty()) {
+                String tok = pushback.removeFirst();
+                if (debug >= 1) {
+                    System.out.println("shlex: popping token " + tok);
+                }
+                return tok;
+            }
+            String raw = read_token();
+            while (raw != null && raw.equals(eof)) {
+                if (filestack.isEmpty()) {
+                    return eof;
+                } else {
+                    pop_source();
                 raw = get_token();
             }
         }
