@@ -1,33 +1,29 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
-    private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
+    // List of shell built-in commands
+    private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
 
     public static void main(String[] args) {
         while (true) {
             String commandLine = inputPrompt();
-            if (commandLine == null || commandLine.isEmpty()) {
+            if (commandLine.isEmpty()) {
                 continue;
             }
-
-            try {
-                List<String> tokens = Shlex.split(commandLine);
-                if (tokens == null || tokens.isEmpty()) {
-                    continue;
-                }
-
-                String command = tokens.get(0);
-                List<String> commandArgs = tokens.subList(1, tokens.size());
-
-                executeCommand(command, commandArgs);
-
-            } catch (IllegalArgumentException e) {
-                System.out.println("Error parsing command: " + e.getMessage());
-            } catch (IOException e) {
-                System.out.println("An error occurred: " + e.getMessage());
+            List<String> tokens = Shlex.split(commandLine);
+            if (tokens.isEmpty()) {
+                continue;
             }
+            String command = tokens.get(0);
+            List<String> commandArgs = tokens.subList(1, tokens.size());
+            executeCommand(command, commandArgs);
         }
     }
 
@@ -37,11 +33,11 @@ public class Main {
         try {
             return reader.readLine();
         } catch (IOException e) {
-            return null;
+            return "";
         }
     }
 
-    private static void executeCommand(String command, List<String> args) throws IOException {
+    private static void executeCommand(String command, List<String> args) {
         switch (command) {
             case "exit":
                 exitShell();
@@ -68,16 +64,11 @@ public class Main {
         System.exit(0);
     }
 
-    private static void executeEcho(List<String> args) {
-        System.out.println(String.join(" ", args));
-    }
-
     private static void executeType(List<String> args) {
         if (args.isEmpty()) {
             System.out.println("type: missing operand");
             return;
         }
-
         String targetCommand = args.get(0);
         if (shBuiltins.contains(targetCommand)) {
             System.out.println(targetCommand + " is a shell builtin");
@@ -95,16 +86,22 @@ public class Main {
         System.out.println(System.getProperty("user.dir"));
     }
 
-    private static void executeCd(List<String> args) throws IOException {
+    private static void executeEcho(List<String> args) {
+        // Simple echo implementation; for more advanced redirection support, extend here.
+        System.out.println(String.join(" ", args));
+    }
+
+    private static void executeCd(List<String> args) {
         if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
-
         String newDir = args.get(0);
-        Path path = Paths.get(newDir).toAbsolutePath().normalize();
+        newDir = newDir.replaceFirst("^~", System.getProperty("user.home"));
         try {
-            System.setProperty("user.dir", path.toString());
+            System.setProperty("user.dir", Paths.get(newDir).toAbsolutePath().normalize().toString());
+            // In Java, changing the "user.dir" property doesn't change the actual working directory,
+            // so you might need to simulate this behavior in your shell implementation.
         } catch (Exception e) {
             System.out.println("cd: " + newDir + ": " + e.getMessage());
         }
@@ -114,78 +111,102 @@ public class Main {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
             for (String dir : pathEnv.split(File.pathSeparator)) {
-                Path filePath = Paths.get(dir, command);
-                if (Files.isExecutable(filePath)) {
-                    return filePath.toString();
+                Path potential = Paths.get(dir, command);
+                if (Files.isRegularFile(potential) && Files.isExecutable(potential)) {
+                    return potential.toString();
                 }
             }
         }
         return null;
     }
 
-    private static void runExternalCommand(String command, List<String> args) throws IOException {
-        List<String> commandWithArgs = new ArrayList<>();
-        commandWithArgs.add(command);
-        commandWithArgs.addAll(args);
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-        processBuilder.redirectErrorStream(true);
-
-        Process process = processBuilder.start();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+    private static void runExternalCommand(String command, List<String> args) {
+        List<String> cmdWithArgs = new ArrayList<>();
+        cmdWithArgs.add(command);
+        cmdWithArgs.addAll(args);
+        ProcessBuilder pb = new ProcessBuilder(cmdWithArgs);
+        pb.redirectErrorStream(true);
+        try {
+            Process process = pb.start();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
             }
-        } catch (IOException e) {
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
             System.out.println(command + ": " + e.getMessage());
-        } finally {
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                System.out.println(command + ": " + e.getMessage());
-            }
-
         }
     }
 
+    /**
+     * The Shlex class provides a static split method that tokenizes an input
+     * command line string in a shell-like manner. It supports:
+     *   a. Single quotes (contents taken literally; backslashes are preserved).
+     *   b. Double quotes (backslashes escape the next character).
+     *   c. Backslashes in unquoted text.
+     *   d. Quoted executables (quotes are removed during tokenization).
+     */
     public static class Shlex {
+        private enum State { NORMAL, IN_SINGLE_QUOTE, IN_DOUBLE_QUOTE, ESCAPE }
 
-        public static List<String> split(String cmdLine) {
+        public static List<String> split(String input) {
             List<String> tokens = new ArrayList<>();
             StringBuilder current = new StringBuilder();
-            boolean singleQuote = false;
-            boolean doubleQuote = false;
-            boolean escape = false;
+            State state = State.NORMAL;
+            State prevState = State.NORMAL;
 
-            for (char c : cmdLine.toCharArray()) {
-                if (escape) {
-                    current.append(c);
-                    escape = false;
-                } else if (c == '\\') {
-                    escape = true;
-                } else if (c == '\'' && !doubleQuote) {
-                    if (singleQuote) {
-                        tokens.add(current.toString());
-                        current.setLength(0);
-                    }
-                    singleQuote = !singleQuote;
-                } else if (c == '"' && !singleQuote) {
-                    if (doubleQuote) {
-                        tokens.add(current.toString());
-                        current.setLength(0);
-                    }
-                    doubleQuote = !doubleQuote;
-                } else if (Character.isWhitespace(c) && !singleQuote && !doubleQuote) {
-                    if (current.length() > 0) {
-                        tokens.add(current.toString());
-                        current.setLength(0);
-                    }
-                } else {
-                    current.append(c);
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                switch (state) {
+                    case NORMAL:
+                        if (c == '\\') {
+                            prevState = state;
+                            state = State.ESCAPE;
+                        } else if (c == '\'') {
+                            state = State.IN_SINGLE_QUOTE;
+                        } else if (c == '"') {
+                            state = State.IN_DOUBLE_QUOTE;
+                        } else if (Character.isWhitespace(c)) {
+                            if (current.length() > 0) {
+                                tokens.add(current.toString());
+                                current.setLength(0);
+                            }
+                        } else {
+                            current.append(c);
+                        }
+                        break;
+                    case IN_SINGLE_QUOTE:
+                        // In single quotes, backslashes are preserved literally.
+                        if (c == '\'') {
+                            state = State.NORMAL;
+                        } else {
+                            current.append(c);
+                        }
+                        break;
+                    case IN_DOUBLE_QUOTE:
+                        if (c == '\\') {
+                            prevState = state;
+                            state = State.ESCAPE;
+                        } else if (c == '"') {
+                            state = State.NORMAL;
+                        } else {
+                            current.append(c);
+                        }
+                        break;
+                    case ESCAPE:
+                        // Append the escaped character and return to previous state.
+                        current.append(c);
+                        state = prevState;
+                        break;
                 }
             }
-
+            if (state == State.ESCAPE) {
+                // Trailing backslash; append it literally.
+                current.append('\\');
+            }
             if (current.length() > 0) {
                 tokens.add(current.toString());
             }
