@@ -105,20 +105,34 @@ public class Main {
         System.out.println(System.getProperty("user.dir"));
     }
 
-    private static void executeCd(List<String> args) throws IOException {
+
+    private static void executeCd(List<String> args) {
         if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
-
         String newDir = args.get(0);
+        // Handle home directory expansion
+        if (newDir.startsWith("~")) {
+            String homeDir = System.getProperty("user.home");
+            if (homeDir == null) {
+                System.out.println("cd: HOME not set");
+                return;
+            }
+            newDir = homeDir + newDir.substring(1);
+        }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
-        try {
-            System.setProperty("user.dir", path.toString());
-        } catch (Exception e) {
-            System.out.println("cd: " + newDir + ": " + e.getMessage());
+        if (Files.exists(path) && Files.isDirectory(path)) {
+            try {
+                System.setProperty("user.dir", path.toString());
+            } catch (Exception e) {
+                System.out.println("cd: " + newDir + ": " + e.getMessage());
+            }
+        } else {
+            System.out.println("cd: " + newDir + ": No such directory");
         }
     }
+
 
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
@@ -242,9 +256,7 @@ public class Main {
                 }
                 return tok;
             }
-
             String raw = read_token();
-
             while (raw != null && raw.equals(eof)) {
                 if (filestack.isEmpty()) {
                     return eof;
@@ -253,7 +265,6 @@ public class Main {
                     raw = get_token();
                 }
             }
-
             if (debug >= 1) {
                 if (raw != null && !raw.equals(eof)) {
                     System.out.println("shlex: token=" + raw);
@@ -261,7 +272,6 @@ public class Main {
                     System.out.println("shlex: token=EOF");
                 }
             }
-
             return raw;
         }
 
