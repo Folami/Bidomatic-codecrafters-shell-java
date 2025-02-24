@@ -7,52 +7,45 @@ public class Main {
 
     public static class Shlex {
 
-        public static List<String> split(String input) {
+        public static String[] split(String s) {
             List<String> tokens = new ArrayList<>();
-            StringBuilder currentToken = new StringBuilder();
-            boolean inSingleQuotes = false;
-            boolean inDoubleQuotes = false;
-            boolean escapeNext = false;
+            StringBuilder current = new StringBuilder();
+            boolean inQuotes = false;
+            char quoteChar = '\0';
+            boolean escaped = false;
 
-            for (int i = 0; i < input.length(); i++) {
-                char c = input.charAt(i);
-
-                if (escapeNext) {
-                    currentToken.append(c);
-                    escapeNext = false;
+            for (char c : s.toCharArray()) {
+                if (escaped) {
+                    current.append(c);
+                    escaped = false;
                 } else if (c == '\\') {
-                    escapeNext = true;
-                } else if (c == '\'' && !inDoubleQuotes) {
-                    if (inSingleQuotes) {
-                        tokens.add(currentToken.toString());
-                        currentToken.setLength(0);
-                        inSingleQuotes = false;
+                    escaped = true;
+                } else if (inQuotes) {
+                    if (c == quoteChar) {
+                        inQuotes = false;
+                        tokens.add(current.toString());
+                        current = new StringBuilder();
                     } else {
-                        inSingleQuotes = true;
+                        current.append(c);
                     }
-                } else if (c == '"' && !inSingleQuotes) {
-                    if (inDoubleQuotes) {
-                        tokens.add(currentToken.toString());
-                        currentToken.setLength(0);
-                        inDoubleQuotes = false;
-                    } else {
-                        inDoubleQuotes = true;
-                    }
-                } else if (Character.isWhitespace(c) && !inSingleQuotes && !inDoubleQuotes) {
-                    if (currentToken.length() > 0) {
-                        tokens.add(currentToken.toString());
-                        currentToken.setLength(0);
+                } else if (c == '"' || c == '\'') {
+                    inQuotes = true;
+                    quoteChar = c;
+                } else if (Character.isWhitespace(c)) {
+                    if (current.length() > 0) {
+                        tokens.add(current.toString());
+                        current = new StringBuilder();
                     }
                 } else {
-                    currentToken.append(c);
+                    current.append(c);
                 }
             }
 
-            if (currentToken.length() > 0) {
-                tokens.add(currentToken.toString());
+            if (current.length() > 0) {
+                tokens.add(current.toString());
             }
 
-            return tokens;
+            return tokens.toArray(new String[0]);
         }
     }
 
@@ -326,3 +319,4 @@ public class Main {
         }
     }
 }
+
