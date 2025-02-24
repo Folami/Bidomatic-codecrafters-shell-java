@@ -3,7 +3,7 @@ import java.nio.file.*;
 import java.util.*;
 
 public class Main {
-    // private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
+    private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
 
     private static class Tokenizer {
 
