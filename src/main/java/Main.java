@@ -111,6 +111,7 @@ public class Main {
             System.out.println("cd: missing operand");
             return;
         }
+        // s
         String newDir = args.get(0);
         // Handle home directory expansion
         if (newDir.startsWith("~")) {
