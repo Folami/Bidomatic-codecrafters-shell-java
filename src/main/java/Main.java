@@ -21,7 +21,6 @@ public class Main {
             if (commandLine == null || commandLine.isEmpty()) {
                 continue;
             }
-
             try {
                 List<String> tokens = Shlex.split(commandLine, true, true);
                 if (tokens == null || tokens.isEmpty()) {
@@ -30,7 +29,6 @@ public class Main {
 
                 String command = tokens.get(0);
                 List<String> commandArgs = tokens.subList(1, tokens.size());
-
                 executeCommand(command, commandArgs);
 
             } catch (IllegalArgumentException e) {
@@ -105,35 +103,21 @@ public class Main {
         System.out.println(System.getProperty("user.dir"));
     }
 
-
-    private static void executeCd(List<String> args) {
+    private static void executeCd(List<String> args) throws IOException {
         if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
-        // s
+
         String newDir = args.get(0);
-        // Handle home directory expansion
-        if (newDir.startsWith("~")) {
-            String homeDir = System.getProperty("user.home");
-            if (homeDir == null) {
-                System.out.println("cd: HOME not set");
-                return;
-            }
-            newDir = homeDir + newDir.substring(1);
-        }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
-        if (Files.exists(path) && Files.isDirectory(path)) {
-            try {
-                System.setProperty("user.dir", path.toString());
-            } catch (Exception e) {
-                System.out.println("cd: " + newDir + ": " + e.getMessage());
-            }
-        } else {
-            System.out.println("cd: " + newDir + ": No such directory");
+        try {
+            System.setProperty("user.dir", path.toString());
+        } catch (Exception e) {
+            System.out.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
-
+    
 
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
