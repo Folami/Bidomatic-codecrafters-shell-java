@@ -5,6 +5,57 @@ import java.util.*;
 public class Main {
     private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
 
+    public static class Shlex {
+
+        public static List<String> split(String input) {
+            List<String> tokens = new ArrayList<>();
+            StringBuilder currentToken = new StringBuilder();
+            boolean inSingleQuotes = false;
+            boolean inDoubleQuotes = false;
+            boolean escapeNext = false;
+
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+
+                if (escapeNext) {
+                    currentToken.append(c);
+                    escapeNext = false;
+                } else if (c == '\\') {
+                    escapeNext = true;
+                } else if (c == '\'' && !inDoubleQuotes) {
+                    if (inSingleQuotes) {
+                        tokens.add(currentToken.toString());
+                        currentToken.setLength(0);
+                        inSingleQuotes = false;
+                    } else {
+                        inSingleQuotes = true;
+                    }
+                } else if (c == '"' && !inSingleQuotes) {
+                    if (inDoubleQuotes) {
+                        tokens.add(currentToken.toString());
+                        currentToken.setLength(0);
+                        inDoubleQuotes = false;
+                    } else {
+                        inDoubleQuotes = true;
+                    }
+                } else if (Character.isWhitespace(c) && !inSingleQuotes && !inDoubleQuotes) {
+                    if (currentToken.length() > 0) {
+                        tokens.add(currentToken.toString());
+                        currentToken.setLength(0);
+                    }
+                } else {
+                    currentToken.append(c);
+                }
+            }
+
+            if (currentToken.length() > 0) {
+                tokens.add(currentToken.toString());
+            }
+
+            return tokens;
+        }
+    }
+
     private static class Tokenizer {
 
         private static List<String> tokens;
@@ -88,8 +139,8 @@ public class Main {
                 continue;
             }
             try {
-                Tokenizer tokenizer = new Tokenizer();
-                List<String> tokens = tokenizer.manualTokenize(commandLine);
+                // Tokenizer tokenizer = new Tokenizer();
+                List<String> tokens = Shlex.split(commandLine);
                 if (tokens.isEmpty()) {
                     continue;
                 }
@@ -139,7 +190,7 @@ public class Main {
     private static void exitShell() {
         System.exit(0);
     }
-
+/* 
     public static void executeEcho(List<String> args) {
         if (args.isEmpty()) {
             System.out.println();
@@ -197,7 +248,7 @@ public class Main {
             System.err.println("Error writing to file: " + e.getMessage());
         }
     }
-
+*/
     private static void executeType(List<String> args) {
         if (args.isEmpty()) {
             System.out.println("type: missing operand");
@@ -271,5 +322,3 @@ public class Main {
         }
     }
 }
-
-
