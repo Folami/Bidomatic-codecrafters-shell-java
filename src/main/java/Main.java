@@ -190,6 +190,10 @@ public class Main {
     private static void exitShell() {
         System.exit(0);
     }
+    
+    public static void executeEcho(List<String> args) {
+        System.out.println(String.join(" ", args));
+    }
 /* 
     public static void executeEcho(List<String> args) {
         if (args.isEmpty()) {
