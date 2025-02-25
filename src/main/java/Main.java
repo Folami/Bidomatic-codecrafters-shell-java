@@ -13,6 +13,7 @@ import java.util.List;
 
 public class Main {
 
+    private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
     public static void main(String[] args) {
@@ -110,7 +111,7 @@ public class Main {
         }
         String newDir = args.get(0);
         if (newDir.startsWith("~")) {
-            newDir = System.getProperty("user.home");
+            newDir = shellHome + newDir.substring(1);
         }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
         try {
