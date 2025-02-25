@@ -110,16 +110,19 @@ public class Main {
         }
         String newDir = args.get(0);
         if (newDir.startsWith("~")) {
-            newDir = System.getProperty("user.home") + newDir.substring(1);
+            newDir = System.getProperty("user.home");
         }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
         try {
-            System.setProperty("user.dir", path.toString());
+            if (Files.exists(path) && Files.isDirectory(path)) {
+                System.setProperty("user.dir", path.toString());
+            } else {
+                 System.out.println("cd: " + newDir + ": No such file or directory");
+            }
         } catch (Exception e) {
             System.out.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
-    
 
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
