@@ -14,8 +14,6 @@ import java.util.List;
 public class Main {
 
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
-    // Store the initial working directory as the shell's home.
-    private static final String shellHome = System.getProperty("user.dir");
 
     public static void main(String[] args) {
         while (true) {
@@ -111,19 +109,21 @@ public class Main {
             return;
         }
         String newDir = args.get(0);
-        // Instead of using System.getProperty("user.home"), use shellHome.
         if (newDir.startsWith("~")) {
-            newDir = shellHome + newDir.substring(1);
+            newDir = System.getProperty("user.home");
         }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
         try {
-            // Simulate changing directory by setting user.dir.
-            System.setProperty("user.dir", path.toString());
+            if (Files.exists(path) && Files.isDirectory(path)) {
+                System.setProperty("user.dir", path.toString());
+            } else {
+                 System.out.println("cd: " + newDir + ": No such file or directory");
+            }
         } catch (Exception e) {
             System.out.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
-    
+
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
@@ -159,6 +159,7 @@ public class Main {
             } catch (InterruptedException e) {
                 System.out.println(command + ": " + e.getMessage());
             }
+
         }
     }
 
@@ -264,12 +265,21 @@ public class Main {
             return raw;
         }
 
-        // --- Refactored read_token method ---
         private String read_token() throws IOException {
             boolean quoted = false;
             String escapedstate = " ";
             while (true) {
-                char nextchar = getNextChar();
+                char nextchar;
+                if (!punctuationChars.isEmpty() && !pushbackChars.isEmpty()) {
+                    nextchar = pushbackChars.removeFirst();
+                } else {
+                    int readChar = instream.read();
+                    if (readChar == -1) {
+                        nextchar = '\0';
+                    } else {
+                        nextchar = (char) readChar;
+                    }
+                }
                 if (nextchar == '\n') {
                     lineno++;
                 }
@@ -280,144 +290,129 @@ public class Main {
                     token = "";
                     break;
                 } else if (state.equals(" ")) {
-                    processSpaceState(nextchar, quoted, escapedstate);
-                } else if (quotes.indexOf(state) != -1) {
-                    processQuoteState(nextchar, escapedstate);
-                    quoted = true;
-                } else if (escape.indexOf(state) != -1) {
-                    processEscapeState(nextchar, escapedstate);
-                } else if (state.equals("a") || state.equals("c")) {
-                    processWordState(nextchar, quoted, escapedstate);
-                }
-                if (state.equals("break")) {
-                    state = " ";
-                    break;
-                } else if (state.equals("continue")){
-                    state = " ";
-                    continue;
-                }
-            }
-            return finalizeToken(quoted);
-        }
-
-        private char getNextChar() throws IOException {
-            if (!punctuationChars.isEmpty() && !pushbackChars.isEmpty()) {
-                return pushbackChars.removeFirst();
-            } else {
-                int readChar = instream.read();
-                return readChar == -1 ? '\0' : (char) readChar;
-            }
-        }
-
-        private void processSpaceState(char nextchar, boolean quoted, String escapedstate) throws IOException {
-            if (nextchar == '\0') {
-                state = null;
-            } else if (whitespace.indexOf(nextchar) != -1) {
-                if (debug >= 2) {
-                    System.out.println("shlex: I see whitespace in whitespace state");
-                }
-                if (!token.isEmpty() || (posix && quoted)) {
-                    // End token
-                } else {
-                    // Continue scanning
-                }
-            } else if (commenters.indexOf(nextchar) != -1) {
-                instream.read();
-                lineno++;
-            } else if (posix && escape.indexOf(nextchar) != -1) {
-                escapedstate = "a";
-                state = String.valueOf(nextchar);
-            } else if (wordchars.indexOf(nextchar) != -1) {
-                token = String.valueOf(nextchar);
-                state = "a";
-            } else if (punctuationChars.indexOf(nextchar) != -1) {
-                token = String.valueOf(nextchar);
-                state = "c";
-            } else if (quotes.indexOf(nextchar) != -1) {
-                if (!posix) {
-                    token = String.valueOf(nextchar);
-                }
-                state = String.valueOf(nextchar);
-            } else if (whitespaceSplit) {
-                token = String.valueOf(nextchar);
-                state = "a";
-            } else {
-                token = String.valueOf(nextchar);
-            }
-        }
-
-        private void processQuoteState(char nextchar, String escapedstate) throws IOException {
-            if (nextchar == '\0') {
-                throw new IllegalArgumentException("No closing quotation");
-            }
-            if (String.valueOf(nextchar).equals(state)) {
-                if (!posix) {
-                    token += nextchar;
-                    state = " ";
-                } else {
-                    state = "a";
-                }
-            } else if (posix && escape.indexOf(nextchar) != -1 && escapedquotes.indexOf(state) != -1) {
-                escapedstate = state;
-                state = String.valueOf(nextchar);
-            } else {
-                token += nextchar;
-            }
-        }
-
-        private void processEscapeState(char nextchar, String escapedstate) throws IOException {
-            if (nextchar == '\0') {
-                throw new IllegalArgumentException("No escaped character");
-            }
-            if (quotes.indexOf(escapedstate) != -1 && nextchar != state.charAt(0) && nextchar != escapedstate.charAt(0)) {
-                token += state;
-            }
-            token += nextchar;
-            state = escapedstate;
-        }
-
-        private void processWordState(char nextchar, boolean quoted, String escapedstate) throws IOException {
-            if (nextchar == '\0') {
-                state = null;
-            } else if (whitespace.indexOf(nextchar) != -1) {
-                state = " ";
-                if (!token.isEmpty() || (posix && quoted)) {
-                    // End token
-                }
-            } else if (commenters.indexOf(nextchar) != -1) {
-                instream.read();
-                lineno++;
-                if (posix) {
-                    state = " ";
-                }
-            } else if (state.equals("c")) {
-                if (punctuationChars.indexOf(nextchar) != -1) {
-                    token += nextchar;
-                } else {
-                    if (whitespace.indexOf(nextchar) == -1) {
-                        pushbackChars.addFirst(nextchar);
+                    if (nextchar == '\0') {
+                        state = null;
+                        break;
+                    } else if (whitespace.indexOf(nextchar) != -1) {
+                        if (debug >= 2) {
+                            System.out.println("shlex: I see whitespace in whitespace state");
+                        }
+                        if (!token.isEmpty() || (posix && quoted)) {
+                            break;
+                        } else {
+                            continue;
+                        }
+                    } else if (commenters.indexOf(nextchar) != -1) {
+                        instream.read();
+                        lineno++;
+                    } else if (posix && escape.indexOf(nextchar) != -1) {
+                        escapedstate = "a";
+                        state = String.valueOf(nextchar);
+                    } else if (wordchars.indexOf(nextchar) != -1) {
+                        token = String.valueOf(nextchar);
+                        state = "a";
+                    } else if (punctuationChars.indexOf(nextchar) != -1) {
+                        token = String.valueOf(nextchar);
+                        state = "c";
+                    } else if (quotes.indexOf(nextchar) != -1) {
+                        if (!posix) {
+                            token = String.valueOf(nextchar);
+                        }
+                        state = String.valueOf(nextchar);
+                    } else if (whitespaceSplit) {
+                        token = String.valueOf(nextchar);
+                        state = "a";
+                    } else {
+                        token = String.valueOf(nextchar);
+                        if (!token.isEmpty() || (posix && quoted)) {
+                            break;
+                        } else {
+                            continue;
+                        }
                     }
-                    state = " ";
+                } else if (quotes.indexOf(state) != -1) {
+                    quoted = true;
+                    if (nextchar == '\0') {
+                        throw new IllegalArgumentException("No closing quotation");
+                    }
+                    if (String.valueOf(nextchar).equals(state)) {
+                        if (!posix) {
+                            token += nextchar;
+                            state = " ";
+                            break;
+                        } else {
+                            state = "a";
+                        }
+                    } else if (posix && escape.indexOf(nextchar) != -1 && escapedquotes.indexOf(state) != -1) {
+                        escapedstate = state;
+                        state = String.valueOf(nextchar);
+                    } else {
+                        token += nextchar;
+                    }
+                } else if (escape.indexOf(state) != -1) {
+                    if (nextchar == '\0') {
+                        throw new IllegalArgumentException("No escaped character");
+                    }
+                    if (quotes.indexOf(escapedstate) != -1 && nextchar != state.charAt(0) && nextchar != escapedstate.charAt(0)) {
+                        token += state;
+                    }
+                    token += nextchar;
+                    state = escapedstate;
+                } else if (state.equals("a") || state.equals("c")) {
+                    if (nextchar == '\0') {
+                        state = null;
+                        break;
+                    } else if (whitespace.indexOf(nextchar) != -1) {
+                        state = " ";
+                        if (!token.isEmpty() || (posix && quoted)) {
+                            break;
+                        } else {
+                            continue;
+                        }
+                    } else if (commenters.indexOf(nextchar) != -1) {
+                        instream.read();
+                        lineno++;
+                        if (posix) {
+                            state = " ";
+                            if (!token.isEmpty() || (posix && quoted)) {
+                                break;
+                            } else {
+                                continue;
+                            }
+                        }
+                    } else if (state.equals("c")) {
+                        if (punctuationChars.indexOf(nextchar) != -1) {
+                            token += nextchar;
+                        } else {
+                            if (whitespace.indexOf(nextchar) == -1) {
+                                pushbackChars.addFirst(nextchar);
+                            }
+                            state = " ";
+                            break;
+                        }
+                    } else if (posix && quotes.indexOf(nextchar) != -1) {
+                        state = String.valueOf(nextchar);
+                    } else if (posix && escape.indexOf(nextchar) != -1) {
+                        escapedstate = "a";
+                        state = String.valueOf(nextchar);
+                    } else if (wordchars.indexOf(nextchar) != -1 || quotes.indexOf(nextchar) != -1
+                            || (whitespaceSplit && punctuationChars.indexOf(nextchar) == -1)) {
+                        token += nextchar;
+                    } else {
+                        if (!punctuationChars.isEmpty()) {
+                            pushbackChars.addFirst(nextchar);
+                        } else {
+                            pushback.addFirst(String.valueOf(nextchar));
+                        }
+                        state = " ";
+                        if (!token.isEmpty() || (posix && quoted)) {
+                            break;
+                        } else {
+                            continue;
+                        }
+                    }
                 }
-            } else if (posix && quotes.indexOf(nextchar) != -1) {
-                state = String.valueOf(nextchar);
-            } else if (posix && escape.indexOf(nextchar) != -1) {
-                escapedstate = "a";
-                state = String.valueOf(nextchar);
-            } else if (wordchars.indexOf(nextchar) != -1 || quotes.indexOf(nextchar) != -1
-                    || (whitespaceSplit && punctuationChars.indexOf(nextchar) == -1)) {
-                token += nextchar;
-            } else {
-                if (!punctuationChars.isEmpty()) {
-                    pushbackChars.addFirst(nextchar);
-                } else {
-                    pushback.addFirst(String.valueOf(nextchar));
-                }
-                state = " ";
             }
-        }
-
-        private String finalizeToken(boolean quoted) {
             String result = token;
             token = "";
             if (posix && !quoted && result.isEmpty()) {
@@ -446,3 +441,6 @@ public class Main {
         }
     }
 }
+
+
+
