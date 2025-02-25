@@ -111,7 +111,7 @@ public class Main {
         }
         String newDir = args.get(0);
         if (newDir.startsWith("~")) {
-            newDir = shellHome + newDir.substring(1);
+            newDir = System.getenv("HOME");
         }
         Path path = Paths.get(newDir).toAbsolutePath().normalize();
         try {
