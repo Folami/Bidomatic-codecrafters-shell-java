@@ -104,26 +104,28 @@ public class Main {
         System.out.println(System.getProperty("user.dir"));
     }
 
-    private static void executeCd(List<String> args) throws IOException {
+    private static void executeCd(List<String> args) {
         if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
         String newDir = args.get(0);
         if (newDir.startsWith("~")) {
-            newDir = System.getenv("HOME");
+            newDir = System.getenv("HOME") + newDir.substring(1);
         }
-        Path path = Paths.get(newDir).toAbsolutePath().normalize();
+        Path currentPath = Paths.get(System.getProperty("user.dir"));
+        Path newPath = currentPath.resolve(newDir).normalize();
         try {
-            if (Files.exists(path) && Files.isDirectory(path)) {
-                System.setProperty("user.dir", path.toString());
+            if (Files.exists(newPath) && Files.isDirectory(newPath)) {
+                System.setProperty("user.dir", newPath.toString());
             } else {
-                 System.out.println("cd: " + newDir + ": No such file or directory");
+                System.err.println("cd: " + newDir + ": No such file or directory");
             }
         } catch (Exception e) {
-            System.out.println("cd: " + newDir + ": " + e.getMessage());
+            System.err.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
+
 
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
