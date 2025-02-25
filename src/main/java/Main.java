@@ -148,21 +148,23 @@ public class Main {
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
         processBuilder.redirectErrorStream(true);
 
-        Process process = processBuilder.start();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+        Process process = null;
+        try {
+            process = processBuilder.start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                System.out.println(command + ": command not found");
             }
         } catch (IOException e) {
+            System.out.println(command + ": command not found");
+        } catch (InterruptedException e) {
             System.out.println(command + ": " + e.getMessage());
-        } finally {
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                System.out.println(command + ": " + e.getMessage());
-            }
-
         }
     }
 
