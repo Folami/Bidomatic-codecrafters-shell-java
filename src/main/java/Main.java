@@ -22,7 +22,7 @@ public class Main {
                 continue;
             }
             try {
-                List<String> tokens = Shlex.split(commandLine, true, true);
+                List<String> tokens = String.split(commandLine, true, true);
                 if (tokens == null || tokens.isEmpty()) {
                     continue;
                 }
