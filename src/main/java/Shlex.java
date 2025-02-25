@@ -160,7 +160,7 @@ public class Main {
         }
     }
 
-    private static class Shlex {
+    class Shlex {
 
         private static List<String> split(String s, boolean comments, boolean posix) throws IOException {
             if (s == null) {
