@@ -132,7 +132,7 @@ public class Main {
         if (pathEnv != null) {
             for (String dir : pathEnv.split(File.pathSeparator)) {
                 Path filePath = Paths.get(dir, command);
-                if (Files.isExecutable(filePath)) {
+                if (Files.exists(filePath) && Files.isExecutable(filePath)) {
                     return filePath.toString();
                 }
             }
