@@ -156,15 +156,23 @@ public class Main {
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
-            for (String dir : pathEnv.split(File.pathSeparator)) {
+            String[] paths = pathEnv.split(File.pathSeparator);
+            for (String dir : paths) {
                 Path filePath = Paths.get(dir, command);
                 if (Files.exists(filePath) && Files.isExecutable(filePath)) {
                     return filePath.toString();
                 }
             }
         }
+        // Check in the current directory
+        Path currentDir = Paths.get(System.getProperty("user.dir"));
+        Path filePath = currentDir.resolve(command);
+        if (Files.exists(filePath) && Files.isExecutable(filePath)) {
+            return filePath.toString();
+        }
         return null;
     }
+
 
     private static void runExternalCommand(String command, List<String> args) throws IOException {
         if (findExecutable(command) == null) {
