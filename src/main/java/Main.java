@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -81,28 +80,32 @@ public class Main {
     private static void executeEcho(List<String> args) throws IOException {
         String outputFile = null;
         List<String> echoArgs = new ArrayList<>();
+
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
                     outputFile = args.get(i + 1);
-                    break;
+                    i++; // Skip the next argument (file name)
                 } else {
-                    System.out.println("echo: missing file operand");
+                    System.err.println("Syntax error: no file specified for redirection");
                     return;
                 }
+            } else {
+                echoArgs.add(args.get(i));
             }
-            echoArgs.add(args.get(i));
         }
 
-        String output = String.join(" ", echoArgs) + "\n";
+        String output = String.join(" ", echoArgs);
+
         if (outputFile != null) {
-            try (FileWriter writer = new FileWriter(outputFile)) {
-                writer.write(output);
+            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFile))) {
+                out.println(output);
             }
         } else {
-            System.out.print(output);
+            System.out.println(output);
         }
     }
+
 
     private static void executeType(List<String> args) {
         if (args.isEmpty()) {
@@ -149,6 +152,7 @@ public class Main {
         }
     }
 
+
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
@@ -163,55 +167,55 @@ public class Main {
     }
 
     private static void runExternalCommand(String command, List<String> args) throws IOException {
-        String outputFile = null;
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
+        
+        String outputFile = null;
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
                     outputFile = args.get(i + 1);
-                    break;
+                    i++; // Skip the next argument (file name)
                 } else {
-                    System.out.println(command + ": missing file operand");
+                    System.err.println("Syntax error: no file specified for redirection");
                     return;
                 }
+            } else {
+                commandWithArgs.add(args.get(i));
             }
-            commandWithArgs.add(args.get(i));
         }
 
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-        processBuilder.redirectErrorStream(true);
+        
+        if (outputFile != null) {
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
+        } else {
+            processBuilder.redirectErrorStream(true);
+        }
 
-        Process process = null;
         try {
-            process = processBuilder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            StringBuilder output = new StringBuilder();
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-            process.waitFor();
-
-            if (outputFile != null) {
-                try (FileWriter writer = new FileWriter(outputFile)) {
-                    writer.write(output.toString());
+            Process process = processBuilder.start();
+            if (outputFile == null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println(line);
+                    }
                 }
-            } else {
-                System.out.print(output.toString());
             }
-
-            if (process.exitValue() != 0) {
-                System.out.println(command + ": command not found");
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.err.println(command + ": command failed with exit code " + exitCode);
             }
         } catch (IOException e) {
-            System.out.println(command + ": command not found");
+            System.err.println(command + ": " + e.getMessage());
         } catch (InterruptedException e) {
-            System.out.println(command + ": " + e.getMessage());
+            System.err.println(command + ": process interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 
-    // Shlex class remains the same
+
     public static class Shlex {
 
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
@@ -490,3 +494,6 @@ public class Main {
         }
     }
 }
+
+
+
