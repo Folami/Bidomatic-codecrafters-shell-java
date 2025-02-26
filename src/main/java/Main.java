@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -77,8 +78,30 @@ public class Main {
         System.exit(0);
     }
 
-    private static void executeEcho(List<String> args) {
-        System.out.println(String.join(" ", args));
+    private static void executeEcho(List<String> args) throws IOException {
+        String outputFile = null;
+        List<String> echoArgs = new ArrayList<>();
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
+                if (i + 1 < args.size()) {
+                    outputFile = args.get(i + 1);
+                    break;
+                } else {
+                    System.out.println("echo: missing file operand");
+                    return;
+                }
+            }
+            echoArgs.add(args.get(i));
+        }
+
+        String output = String.join(" ", echoArgs) + "\n";
+        if (outputFile != null) {
+            try (FileWriter writer = new FileWriter(outputFile)) {
+                writer.write(output);
+            }
+        } else {
+            System.out.print(output);
+        }
     }
 
     private static void executeType(List<String> args) {
@@ -126,7 +149,6 @@ public class Main {
         }
     }
 
-
     private static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
@@ -141,9 +163,21 @@ public class Main {
     }
 
     private static void runExternalCommand(String command, List<String> args) throws IOException {
+        String outputFile = null;
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
-        commandWithArgs.addAll(args);
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
+                if (i + 1 < args.size()) {
+                    outputFile = args.get(i + 1);
+                    break;
+                } else {
+                    System.out.println(command + ": missing file operand");
+                    return;
+                }
+            }
+            commandWithArgs.add(args.get(i));
+        }
 
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
         processBuilder.redirectErrorStream(true);
@@ -151,13 +185,22 @@ public class Main {
         Process process = null;
         try {
             process = processBuilder.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            StringBuilder output = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
             }
             process.waitFor();
+
+            if (outputFile != null) {
+                try (FileWriter writer = new FileWriter(outputFile)) {
+                    writer.write(output.toString());
+                }
+            } else {
+                System.out.print(output.toString());
+            }
+
             if (process.exitValue() != 0) {
                 System.out.println(command + ": command not found");
             }
@@ -168,6 +211,7 @@ public class Main {
         }
     }
 
+    // Shlex class remains the same
     public static class Shlex {
 
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
@@ -446,6 +490,3 @@ public class Main {
         }
     }
 }
-
-
-
