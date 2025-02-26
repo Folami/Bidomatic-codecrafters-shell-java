@@ -167,6 +167,10 @@ public class Main {
     }
 
     private static void runExternalCommand(String command, List<String> args) throws IOException {
+        if (findExecutable(command) == null) {
+            System.err.println(command + ": command not found");
+            return;
+        }
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
         
@@ -217,16 +221,21 @@ public class Main {
                     // Do not print generic error message if output is redirected
                     // System.err.println(command + ": command failed with exit code " + exitCode);
                 } else {
-                    System.err.println(command + ": command failed with exit code " + exitCode);
+                    System.err.println(command + ": command not found");
                 }
             }
         } catch (IOException e) {
-            System.err.println(command + ": " + e.getMessage());
+            if (e.getMessage().contains("Cannot run program")) {
+                System.err.println(command + ": command not found");
+            } else {
+                System.err.println(command + ": " + e.getMessage());
+            }
         } catch (InterruptedException e) {
             System.err.println(command + ": process interrupted");
             Thread.currentThread().interrupt();
         }
     }
+
 
 
     public static class Shlex {
