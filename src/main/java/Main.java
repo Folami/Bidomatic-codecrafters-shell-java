@@ -169,7 +169,7 @@ public class Main {
     private static void runExternalCommand(String command, List<String> args) throws IOException {
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
-
+        
         String outputFile = null;
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
@@ -185,10 +185,10 @@ public class Main {
             }
         }
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-
+        
         if (outputFile != null) {
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-            processBuilder.redirectErrorStream(true);
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
         } else {
             processBuilder.redirectErrorStream(true);
         }
@@ -202,15 +202,22 @@ public class Main {
                     }
                 }
             }
+            // Capture error stream if output is redirected to a file
+            if (outputFile != null) {
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String errorLine;
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        System.err.println(errorLine); // Print error messages
+                    }
+                }
+            }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                if (outputFile == null){
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            System.err.println(line);
-                        }
-                    }
+                if (outputFile != null) {
+                    // Do not print generic error message if output is redirected
+                    // System.err.println(command + ": command failed with exit code " + exitCode);
+                } else {
+                    System.err.println(command + ": command failed with exit code " + exitCode);
                 }
             }
         } catch (IOException e) {
@@ -220,6 +227,7 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
+
 
     public static class Shlex {
 
