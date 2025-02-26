@@ -169,6 +169,7 @@ public class Main {
     private static void runExternalCommand(String command, List<String> args) throws IOException {
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
+
         String outputFile = null;
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
@@ -184,8 +185,10 @@ public class Main {
             }
         }
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
+
         if (outputFile != null) {
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
+            processBuilder.redirectErrorStream(true);
         } else {
             processBuilder.redirectErrorStream(true);
         }
@@ -201,15 +204,14 @@ public class Main {
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                if (process.getErrorStream().available() > 0) {
-                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                        String errorLine;
-                        while ((errorLine = errorReader.readLine()) != null) {
-                            System.out.println(errorLine);
+                if (outputFile == null){
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            System.err.println(line);
                         }
                     }
                 }
-                System.err.println(command + ": command failed with exit code " + exitCode);
             }
         } catch (IOException e) {
             System.err.println(command + ": " + e.getMessage());
@@ -218,7 +220,6 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
-
 
     public static class Shlex {
 
