@@ -169,7 +169,6 @@ public class Main {
     private static void runExternalCommand(String command, List<String> args) throws IOException {
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
-        
         String outputFile = null;
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
@@ -184,15 +183,12 @@ public class Main {
                 commandWithArgs.add(args.get(i));
             }
         }
-
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-        
         if (outputFile != null) {
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
         } else {
             processBuilder.redirectErrorStream(true);
         }
-
         try {
             Process process = processBuilder.start();
             if (outputFile == null) {
@@ -205,6 +201,14 @@ public class Main {
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
+                if (process.getErrorStream().available() > 0) {
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String errorLine;
+                        while ((errorLine = errorReader.readLine()) != null) {
+                            System.out.println(errorLine);
+                        }
+                    }
+                }
                 System.err.println(command + ": command failed with exit code " + exitCode);
             }
         } catch (IOException e) {
