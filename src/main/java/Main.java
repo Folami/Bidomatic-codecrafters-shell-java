@@ -183,7 +183,6 @@ public class Main {
         commandWithArgs.add(command);
         
         String outputFile = null;
-        String errorFile = null;
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
@@ -193,67 +192,44 @@ public class Main {
                     System.err.println("Syntax error: no file specified for redirection");
                     return;
                 }
-            } else if (args.get(i).equals("2>")) {
-                if (i + 1 < args.size()) {
-                    errorFile = args.get(i + 1);
-                    i++; // Skip the next argument (file name)
-                } else {
-                    System.err.println("Syntax error: no file specified for error redirection");
-                    return;
-                }
             } else {
                 commandWithArgs.add(args.get(i));
             }
         }
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
         
-        if (outputFile != null && errorFile != null) {
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-        } else if (outputFile != null) {
+        if (outputFile != null) {
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
             processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
-        } else if (errorFile != null) {
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE); // Capture output stream
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
         } else {
             processBuilder.redirectErrorStream(true);
         }
         try {
             Process process = processBuilder.start();
-            if (outputFile == null && errorFile == null) {
+            if (outputFile == null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         System.out.println(line);
                     }
                 }
-            } else if (outputFile != null) {
-                // Output is redirected, capture error stream if not redirected to a file
-                if (errorFile == null) {
-                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                        String errorLine;
-                        while ((errorLine = errorReader.readLine()) != null) {
-                            System.err.println(errorLine); // Print error messages
-                        }
-                    }
-                }
-            } else if (errorFile != null) {
-                // Error is redirected, capture output stream if not redirected to a file
-                try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String outputLine;
-                    while ((outputLine = outputReader.readLine()) != null) {
-                        System.out.println(outputLine); // Print output
+            }
+            // Capture error stream if output is redirected to a file
+            if (outputFile != null) {
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String errorLine;
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        System.err.println(errorLine); // Print error messages
                     }
                 }
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                if (outputFile != null || errorFile != null) {
-                    // Do not print generic error message if output or error is redirected
+                if (outputFile != null) {
+                    // Do not print generic error message if output is redirected
                     // System.err.println(command + ": command failed with exit code " + exitCode);
                 } else {
-                    System.err.println(command + ": command failed with exit code " + exitCode);
+                    System.err.println(command + ": command not found");
                 }
             }
         } catch (IOException e) {
@@ -267,6 +243,7 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
+
 
 
     public static class Shlex {
@@ -549,75 +526,4 @@ public class Main {
 }
 
 
-
-
-private static void runExternalCommand(String command, List<String> args) throws IOException {
-    if (findExecutable(command) == null) {
-        System.err.println(command + ": command not found");
-        return;
-    }
-    List<String> commandWithArgs = new ArrayList<>();
-    commandWithArgs.add(command);
-    String outputFile = null;
-    String errorFile = null;
-    for (int i = 0; i < args.size(); i++) {
-        if (args.get(i).equals(">") || args.get(i).equals("1>")) {
-            if (i + 1 < args.size()) {
-                outputFile = args.get(i + 1);
-                i++; // Skip the next argument (file name)
-            } else {
-                System.err.println("Syntax error: no file specified for redirection");
-                return;
-            }
-        } else if (args.get(i).equals("2>")) {
-            if (i + 1 < args.size()) {
-                errorFile = args.get(i + 1);
-                i++; // Skip the next argument (file name)
-            } else {
-                System.err.println("Syntax error: no file specified for error redirection");
-                return;
-            }
-        } else {
-            commandWithArgs.add(args.get(i));
-        }
-    }
-    ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-    if (outputFile != null) {
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-    }
-    if (errorFile != null) {
-        processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-    } else if (outputFile == null) {
-        processBuilder.redirectErrorStream(true);
-    }
-    try {
-        Process process = processBuilder.start();
-        if (outputFile == null) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-        }
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            if (outputFile != null) {
-                // Do not print generic error message if output is redirected
-                // System.err.println(command + ": command failed with exit code " + exitCode);
-            } else {
-                System.err.println(command + ": command failed with exit code " + exitCode);
-            }
-        }
-    } catch (IOException e) {
-        if (e.getMessage().contains("Cannot run program")) {
-            System.err.println(command + ": command not found");
-        } else {
-            System.err.println(command + ": " + e.getMessage());
-        }
-    } catch (InterruptedException e) {
-        System.err.println(command + ": process interrupted");
-        Thread.currentThread().interrupt();
-    }
-}
 
