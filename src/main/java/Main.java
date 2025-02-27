@@ -117,7 +117,7 @@ public class Main {
                 }
             }
             try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFileObj))) {
-                out.println(output);
+                out.println(output); // Write output with newline for stdout
             }
         } else {
             // If no stdout redirection, print to console
@@ -133,11 +133,9 @@ public class Main {
                     return;
                 }
             }
+            // Create or truncate the file, but don't write anything since echo has no stderr
             try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFileObj))) {
-                // For echo, we typically don't have stderr output unless simulating an error.
-                // In this case, we'll assume no error output unless explicitly needed.
-                // If you want to test stderr redirection, you could simulate an error message here.
-                errOut.println(""); // Empty by default for echo, as it doesn't generate stderr naturally
+                errOut.print(""); // Use print instead of println to avoid newline
             }
         }
     }
