@@ -207,18 +207,26 @@ public class Main {
         }
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
         
-        if (outputFile != null && errorFile != null) {
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-        } else if (outputFile != null) {
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
-        } else if (errorFile != null) {
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE); // Capture output stream
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-        } else {
+        if (outputFile != null) {
+            File outputFileObj = new File(outputFile);
+            if (!outputFileObj.getParentFile().exists()) {
+                System.err.println("Error: directory for output redirection file does not exist");
+                return;
+            }
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
+        }
+        
+        if (errorFile != null) {
+            File errorFileObj = new File(errorFile);
+            if (!errorFileObj.getParentFile().exists()) {
+                System.err.println("Error: directory for error redirection file does not exist");
+                return;
+            }
+            processBuilder.redirectError(ProcessBuilder.Redirect.to(errorFileObj));
+        } else if (outputFile == null) {
             processBuilder.redirectErrorStream(true);
         }
+        
         try {
             Process process = processBuilder.start();
             if (outputFile == null && errorFile == null) {
