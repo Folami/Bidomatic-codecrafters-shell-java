@@ -287,67 +287,6 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
-    private static void runExternalCommand(String command, List<String> args) throws IOException {
-    // ... existing code ...
-
-    String outputFile = null;
-    String errorFile = null;
-    for (int i = 0; i < args.size(); i++) {
-        if (args.get(i).equals(">") || args.get(i).equals("1>")) {
-            if (i + 1 < args.size()) {
-                outputFile = args.get(i + 1);
-                i++; // Skip the next argument (file name)
-            } else {
-                System.err.println("Syntax error: no file specified for redirection");
-                return;
-            }
-        } else if (args.get(i).equals("2>")) {
-            if (i + 1 < args.size()) {
-                errorFile = args.get(i + 1);
-                i++; // Skip the next argument (file name)
-            } else {
-                System.err.println("Syntax error: no file specified for error redirection");
-                return;
-            }
-        } else {
-            commandWithArgs.add(args.get(i));
-        }
-    }
-
-    ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-    
-    // Ensure directories exist for output and error files
-    if (outputFile != null) {
-        Path outputFilePath = Paths.get(outputFile);
-        Path outputDir = outputFilePath.getParent();
-        if (outputDir != null && !Files.exists(outputDir)) {
-            try {
-                Files.createDirectories(outputDir);
-            } catch (IOException e) {
-                System.err.println("Failed to create directory for output file: " + e.getMessage());
-                return;
-            }
-        }
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
-        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
-    } else if (errorFile != null) {
-        Path errorFilePath = Paths.get(errorFile);
-        Path errorDir = errorFilePath.getParent();
-        if (errorDir != null && !Files.exists(errorDir)) {
-            try {
-                Files.createDirectories(errorDir);
-            } catch (IOException e) {
-                System.err.println("Failed to create directory for error file: " + e.getMessage());
-                return;
-            }
-        }
-        processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-    } else {
-        processBuilder.redirectErrorStream(true);
-    }
-
-    // ... existing code ...
-}
 
 
     public static class Shlex {
