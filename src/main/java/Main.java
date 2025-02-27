@@ -78,10 +78,11 @@ public class Main {
     }
 
     private static void executeEcho(List<String> args) throws IOException {
-        String outputFile = null;
-        String errorFile = null;
+        String outputFile = null;  // For stdout redirection (>)
+        String errorFile = null;   // For stderr redirection (2>)
         List<String> echoArgs = new ArrayList<>();
 
+        // Parse arguments for redirection
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
@@ -106,6 +107,7 @@ public class Main {
 
         String output = String.join(" ", echoArgs);
 
+        // Handle stdout redirection
         if (outputFile != null) {
             File outputFileObj = new File(outputFile);
             if (!outputFileObj.getParentFile().exists()) {
@@ -117,7 +119,13 @@ public class Main {
             try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFileObj))) {
                 out.println(output);
             }
-        } else if (errorFile != null) {
+        } else {
+            // If no stdout redirection, print to console
+            System.out.println(output);
+        }
+
+        // Handle stderr redirection
+        if (errorFile != null) {
             File errorFileObj = new File(errorFile);
             if (!errorFileObj.getParentFile().exists()) {
                 if (!errorFileObj.getParentFile().mkdirs()) {
@@ -126,10 +134,11 @@ public class Main {
                 }
             }
             try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFileObj))) {
-                errOut.println(output);
+                // For echo, we typically don't have stderr output unless simulating an error.
+                // In this case, we'll assume no error output unless explicitly needed.
+                // If you want to test stderr redirection, you could simulate an error message here.
+                errOut.println(""); // Empty by default for echo, as it doesn't generate stderr naturally
             }
-        } else {
-            System.out.println(output);
         }
     }
 
