@@ -218,17 +218,6 @@ public class Main {
         } else {
             processBuilder.redirectErrorStream(true);
         }
-        if (errorFile != null) {
-            File errorFileObj = new File(errorFile);
-            if (!errorFileObj.getParentFile().exists()) {
-                System.err.println("Error: directory for error redirection file does not exist");
-                return;
-            }
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(errorFileObj));
-        } else if (outputFile == null) {
-            processBuilder.redirectErrorStream(true);
-        }
-        
         try {
             Process process = processBuilder.start();
             if (outputFile == null && errorFile == null) {
