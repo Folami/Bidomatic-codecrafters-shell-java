@@ -110,15 +110,20 @@ public class Main {
             try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFile))) {
                 out.println(output);
             }
-        } else if (errorFile != null) {
-            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFile))) {
+        } 
+        
+        if (errorFile != null) {
+            File errFile = new File(errorFile);
+            errFile.getParentFile().mkdirs(); // Ensure parent directories exist
+            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errFile))) {
                 errOut.println(output);
             }
-        } else {
+        } 
+        
+        if (outputFile == null && errorFile == null) {
             System.out.println(output);
         }
     }
-
 
 
     private static void executeType(List<String> args) {
