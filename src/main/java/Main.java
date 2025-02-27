@@ -206,16 +206,18 @@ public class Main {
             }
         }
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-        
         if (outputFile != null) {
-            File outputFileObj = new File(outputFile);
-            if (!outputFileObj.getParentFile().exists()) {
-                System.err.println("Error: directory for output redirection file does not exist");
-                return;
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+        } else if (errorFile != null) {
+            try {
+                processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
+            } catch (IOException e) {
+                // Ignore the exception when redirecting stderr to a non-existent file
             }
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
+        } else {
+            processBuilder.redirectErrorStream(true);
         }
-        
         if (errorFile != null) {
             File errorFileObj = new File(errorFile);
             if (!errorFileObj.getParentFile().exists()) {
