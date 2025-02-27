@@ -107,55 +107,6 @@ public class Main {
         String output = String.join(" ", echoArgs);
 
         if (outputFile != null) {
-            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFile))) {
-                out.println(output);
-            }
-        } 
-        
-        if (errorFile != null) {
-            File errFile = new File(errorFile);
-            errFile.getParentFile().mkdirs(); // Ensure parent directories exist
-            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errFile))) {
-                errOut.println(output);
-            }
-        } 
-        
-        if (outputFile == null && errorFile == null) {
-            System.out.println(output);
-        }
-    }
-
-
-    private static void executeEcho(List<String> args) throws IOException {
-        String outputFile = null;
-        String errorFile = null;
-        List<String> echoArgs = new ArrayList<>();
-
-        for (int i = 0; i < args.size(); i++) {
-            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
-                if (i + 1 < args.size()) {
-                    outputFile = args.get(i + 1);
-                    i++; // Skip file name
-                } else {
-                    System.err.println("Syntax error: no file specified for redirection");
-                    return;
-                }
-            } else if (args.get(i).equals("2>")) {
-                if (i + 1 < args.size()) {
-                    errorFile = args.get(i + 1);
-                    i++; // Skip file name
-                } else {
-                    System.err.println("Syntax error: no file specified for error redirection");
-                    return;
-                }
-            } else {
-                echoArgs.add(args.get(i));
-            }
-        }
-
-        String output = String.join(" ", echoArgs);
-
-        if (outputFile != null) {
             File outputFileObj = new File(outputFile);
             if (!outputFileObj.getParentFile().exists()) {
                 if (!outputFileObj.getParentFile().mkdirs()) {
@@ -611,4 +562,3 @@ public class Main {
         }
     }
 }
-
