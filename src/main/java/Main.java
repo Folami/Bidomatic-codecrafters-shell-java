@@ -78,9 +78,10 @@ public class Main {
     }
 
     private static void executeEcho(List<String> args) throws IOException {
-        String outputFile = null;      // For stdout redirection (>)
+        String outputFile = null;       // For stdout redirection (>)
         String appendOutputFile = null; // For stdout append redirection (>> or 1>>)
-        String errorFile = null;       // For stderr redirection (2>)
+        String errorFile = null;        // For stderr redirection (2>)
+        String appendErrorFile = null;  // For stderr append redirection (2>>)
         List<String> echoArgs = new ArrayList<>();
 
         // Parse arguments for redirection
@@ -107,6 +108,14 @@ public class Main {
                     i++; // Skip file name
                 } else {
                     System.err.println("Syntax error: no file specified for error redirection");
+                    return;
+                }
+            } else if (args.get(i).equals("2>>")) {
+                if (i + 1 < args.size()) {
+                    appendErrorFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for error append redirection");
                     return;
                 }
             } else {
@@ -146,7 +155,7 @@ public class Main {
             System.out.println(output);
         }
 
-        // Handle stderr redirection
+        // Handle stderr redirection (overwrite)
         if (errorFile != null) {
             File errorFileObj = new File(errorFile);
             if (!errorFileObj.getParentFile().exists()) {
@@ -156,7 +165,20 @@ public class Main {
                 }
             }
             try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFileObj))) {
-                errOut.print(""); // Use print instead of println to avoid newline
+                errOut.print(""); // No stderr for echo by default
+            }
+        }
+        // Handle stderr redirection (append)
+        else if (appendErrorFile != null) {
+            File appendErrorFileObj = new File(appendErrorFile);
+            if (!appendErrorFileObj.getParentFile().exists()) {
+                if (!appendErrorFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for error append redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(appendErrorFileObj, true))) {
+                errOut.print(""); // No stderr for echo by default, append nothing
             }
         }
     }
@@ -228,125 +250,143 @@ public class Main {
 
 
     private static void runExternalCommand(String command, List<String> args) throws IOException {
-        if (findExecutable(command) == null) {
-            System.err.println(command + ": command not found");
-            return;
-        }
-        List<String> commandWithArgs = new ArrayList<>();
-        commandWithArgs.add(command);
-        
-        String outputFile = null;      // For stdout overwrite (>)
-        String appendOutputFile = null; // For stdout append (>> or 1>>)
-        String errorFile = null;       // For stderr (2>)
-        for (int i = 0; i < args.size(); i++) {
-            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
-                if (i + 1 < args.size()) {
-                    outputFile = args.get(i + 1);
-                    i++; // Skip the next argument (file name)
-                } else {
-                    System.err.println("Syntax error: no file specified for redirection");
-                    return;
-                }
-            } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
-                if (i + 1 < args.size()) {
-                    appendOutputFile = args.get(i + 1);
-                    i++; // Skip the next argument (file name)
-                } else {
-                    System.err.println("Syntax error: no file specified for append redirection");
-                    return;
-                }
-            } else if (args.get(i).equals("2>")) {
-                if (i + 1 < args.size()) {
-                    errorFile = args.get(i + 1);
-                    i++; // Skip the next argument (file name)
-                } else {
-                    System.err.println("Syntax error: no file specified for error redirection");
-                    return;
-                }
+    if (findExecutable(command) == null) {
+        System.err.println(command + ": command not found");
+        return;
+    }
+    List<String> commandWithArgs = new ArrayList<>();
+    commandWithArgs.add(command);
+    
+    String outputFile = null;       // For stdout overwrite (>)
+    String appendOutputFile = null; // For stdout append (>> or 1>>)
+    String errorFile = null;        // For stderr overwrite (2>)
+    String appendErrorFile = null;  // For stderr append (2>>)
+    for (int i = 0; i < args.size(); i++) {
+        if (args.get(i).equals(">") || args.get(i).equals("1>")) {
+            if (i + 1 < args.size()) {
+                outputFile = args.get(i + 1);
+                i++; // Skip the next argument (file name)
             } else {
-                commandWithArgs.add(args.get(i));
+                System.err.println("Syntax error: no file specified for redirection");
+                return;
             }
-        }
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
-        if (outputFile != null) {
-            File outputFileObj = new File(outputFile);
-            if (!outputFileObj.getParentFile().exists()) {
-                if (!outputFileObj.getParentFile().mkdirs()) {
-                    System.err.println("Error: unable to create directory for output redirection file");
-                    return;
-                }
+        } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
+            if (i + 1 < args.size()) {
+                appendOutputFile = args.get(i + 1);
+                i++; // Skip the next argument (file name)
+            } else {
+                System.err.println("Syntax error: no file specified for append redirection");
+                return;
             }
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
-            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
-        } else if (appendOutputFile != null) {
-            File appendOutputFileObj = new File(appendOutputFile);
-            if (!appendOutputFileObj.getParentFile().exists()) {
-                if (!appendOutputFileObj.getParentFile().mkdirs()) {
-                    System.err.println("Error: unable to create directory for append redirection file");
-                    return;
-                }
+        } else if (args.get(i).equals("2>")) {
+            if (i + 1 < args.size()) {
+                errorFile = args.get(i + 1);
+                i++; // Skip the next argument (file name)
+            } else {
+                System.err.println("Syntax error: no file specified for error redirection");
+                return;
             }
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(appendOutputFileObj));
-            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
-        } else if (errorFile != null) {
-            File errorFileObj = new File(errorFile);
-            if (!errorFileObj.getParentFile().exists()) {
-                if (!errorFileObj.getParentFile().mkdirs()) {
-                    System.err.println("Error: unable to create directory for error redirection file");
-                    return;
-                }
+        } else if (args.get(i).equals("2>>")) {
+            if (i + 1 < args.size()) {
+                appendErrorFile = args.get(i + 1);
+                i++; // Skip the next argument (file name)
+            } else {
+                System.err.println("Syntax error: no file specified for error append redirection");
+                return;
             }
-            processBuilder.redirectError(ProcessBuilder.Redirect.to(errorFileObj));
         } else {
-            processBuilder.redirectErrorStream(true);
-        }
-
-        try {
-            Process process = processBuilder.start();
-            if (outputFile == null && appendOutputFile == null && errorFile == null) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println(line);
-                    }
-                }
-            } else if (outputFile != null || appendOutputFile != null) {
-                if (errorFile == null) {
-                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                        String errorLine;
-                        while ((errorLine = errorReader.readLine()) != null) {
-                            System.err.println(errorLine); // Print error messages
-                        }
-                    }
-                }
-            } else if (errorFile != null) {
-                try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String outputLine;
-                    while ((outputLine = outputReader.readLine()) != null) {
-                        System.out.println(outputLine); // Print output
-                    }
-                }
-            }
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                if (outputFile != null || appendOutputFile != null || errorFile != null) {
-                    // Do not print generic error message if output or error is redirected
-                } else {
-                    System.err.println(command + ": command failed with exit code " + exitCode);
-                }
-            }
-        } catch (IOException e) {
-            if (e.getMessage().contains("Cannot run program")) {
-                System.err.println(command + ": command not found");
-            } else {
-                System.err.println(command + ": " + e.getMessage());
-            }
-        } catch (InterruptedException e) {
-            System.err.println(command + ": process interrupted");
-            Thread.currentThread().interrupt();
+            commandWithArgs.add(args.get(i));
         }
     }
+
+    ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
+    if (outputFile != null) {
+        File outputFileObj = new File(outputFile);
+        if (!outputFileObj.getParentFile().exists()) {
+            if (!outputFileObj.getParentFile().mkdirs()) {
+                System.err.println("Error: unable to create directory for output redirection file");
+                return;
+            }
+        }
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
+        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+    } else if (appendOutputFile != null) {
+        File appendOutputFileObj = new File(appendOutputFile);
+        if (!appendOutputFileObj.getParentFile().exists()) {
+            if (!appendOutputFileObj.getParentFile().mkdirs()) {
+                System.err.println("Error: unable to create directory for append redirection file");
+                return;
+            }
+        }
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(appendOutputFileObj));
+        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+    } else if (errorFile != null) {
+        File errorFileObj = new File(errorFile);
+        if (!errorFileObj.getParentFile().exists()) {
+            if (!errorFileObj.getParentFile().mkdirs()) {
+                System.err.println("Error: unable to create directory for error redirection file");
+                return;
+            }
+        }
+        processBuilder.redirectError(ProcessBuilder.Redirect.to(errorFileObj));
+    } else if (appendErrorFile != null) {
+        File appendErrorFileObj = new File(appendErrorFile);
+        if (!appendErrorFileObj.getParentFile().exists()) {
+            if (!appendErrorFileObj.getParentFile().mkdirs()) {
+                System.err.println("Error: unable to create directory for error append redirection file");
+                return;
+            }
+        }
+        processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(appendErrorFileObj));
+    } else {
+        processBuilder.redirectErrorStream(true);
+    }
+
+    try {
+        Process process = processBuilder.start();
+        if (outputFile == null && appendOutputFile == null && errorFile == null && appendErrorFile == null) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+        } else if (outputFile != null || appendOutputFile != null) {
+            if (errorFile == null && appendErrorFile == null) {
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String errorLine;
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        System.err.println(errorLine); // Print error messages
+                    }
+                }
+            }
+        } else if (errorFile != null || appendErrorFile != null) {
+            try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String outputLine;
+                while ((outputLine = outputReader.readLine()) != null) {
+                    System.out.println(outputLine); // Print output
+                }
+            }
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            if (outputFile != null || appendOutputFile != null || errorFile != null || appendErrorFile != null) {
+                // Do not print generic error message if output or error is redirected
+            } else {
+                System.err.println(command + ": command failed with exit code " + exitCode);
+            }
+        }
+    } catch (IOException e) {
+        if (e.getMessage().contains("Cannot run program")) {
+            System.err.println(command + ": command not found");
+        } else {
+            System.err.println(command + ": " + e.getMessage());
+        }
+    } catch (InterruptedException e) {
+        System.err.println(command + ": process interrupted");
+        Thread.currentThread().interrupt();
+    }
+}
     
     public static class Shlex {
 
