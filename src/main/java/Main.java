@@ -78,8 +78,9 @@ public class Main {
     }
 
     private static void executeEcho(List<String> args) throws IOException {
-        String outputFile = null;  // For stdout redirection (>)
-        String errorFile = null;   // For stderr redirection (2>)
+        String outputFile = null;      // For stdout redirection (>)
+        String appendOutputFile = null; // For stdout append redirection (>> or 1>>)
+        String errorFile = null;       // For stderr redirection (2>)
         List<String> echoArgs = new ArrayList<>();
 
         // Parse arguments for redirection
@@ -90,6 +91,14 @@ public class Main {
                     i++; // Skip file name
                 } else {
                     System.err.println("Syntax error: no file specified for redirection");
+                    return;
+                }
+            } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
+                if (i + 1 < args.size()) {
+                    appendOutputFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for append redirection");
                     return;
                 }
             } else if (args.get(i).equals("2>")) {
@@ -107,7 +116,7 @@ public class Main {
 
         String output = String.join(" ", echoArgs);
 
-        // Handle stdout redirection
+        // Handle stdout redirection (overwrite)
         if (outputFile != null) {
             File outputFileObj = new File(outputFile);
             if (!outputFileObj.getParentFile().exists()) {
@@ -118,6 +127,19 @@ public class Main {
             }
             try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFileObj))) {
                 out.println(output); // Write output with newline for stdout
+            }
+        }
+        // Handle stdout redirection (append)
+        else if (appendOutputFile != null) {
+            File appendOutputFileObj = new File(appendOutputFile);
+            if (!appendOutputFileObj.getParentFile().exists()) {
+                if (!appendOutputFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for append redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(appendOutputFileObj, true))) {
+                out.println(output); // Append output with newline
             }
         } else {
             // If no stdout redirection, print to console
@@ -133,7 +155,6 @@ public class Main {
                     return;
                 }
             }
-            // Create or truncate the file, but don't write anything since echo has no stderr
             try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFileObj))) {
                 errOut.print(""); // Use print instead of println to avoid newline
             }
@@ -214,8 +235,9 @@ public class Main {
         List<String> commandWithArgs = new ArrayList<>();
         commandWithArgs.add(command);
         
-        String outputFile = null;
-        String errorFile = null;
+        String outputFile = null;      // For stdout overwrite (>)
+        String appendOutputFile = null; // For stdout append (>> or 1>>)
+        String errorFile = null;       // For stderr (2>)
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
@@ -223,6 +245,14 @@ public class Main {
                     i++; // Skip the next argument (file name)
                 } else {
                     System.err.println("Syntax error: no file specified for redirection");
+                    return;
+                }
+            } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
+                if (i + 1 < args.size()) {
+                    appendOutputFile = args.get(i + 1);
+                    i++; // Skip the next argument (file name)
+                } else {
+                    System.err.println("Syntax error: no file specified for append redirection");
                     return;
                 }
             } else if (args.get(i).equals("2>")) {
@@ -237,6 +267,7 @@ public class Main {
                 commandWithArgs.add(args.get(i));
             }
         }
+
         ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
         if (outputFile != null) {
             File outputFileObj = new File(outputFile);
@@ -247,6 +278,16 @@ public class Main {
                 }
             }
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+        } else if (appendOutputFile != null) {
+            File appendOutputFileObj = new File(appendOutputFile);
+            if (!appendOutputFileObj.getParentFile().exists()) {
+                if (!appendOutputFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for append redirection file");
+                    return;
+                }
+            }
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(appendOutputFileObj));
             processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
         } else if (errorFile != null) {
             File errorFileObj = new File(errorFile);
@@ -260,17 +301,17 @@ public class Main {
         } else {
             processBuilder.redirectErrorStream(true);
         }
+
         try {
             Process process = processBuilder.start();
-            if (outputFile == null && errorFile == null) {
+            if (outputFile == null && appendOutputFile == null && errorFile == null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         System.out.println(line);
                     }
                 }
-            } else if (outputFile != null) {
-                // Output is redirected, capture error stream if not redirected to a file
+            } else if (outputFile != null || appendOutputFile != null) {
                 if (errorFile == null) {
                     try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                         String errorLine;
@@ -280,7 +321,6 @@ public class Main {
                     }
                 }
             } else if (errorFile != null) {
-                // Error is redirected, capture output stream if not redirected to a file
                 try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String outputLine;
                     while ((outputLine = outputReader.readLine()) != null) {
@@ -290,9 +330,8 @@ public class Main {
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                if (outputFile != null || errorFile != null) {
+                if (outputFile != null || appendOutputFile != null || errorFile != null) {
                     // Do not print generic error message if output or error is redirected
-                    // System.err.println(command + ": command failed with exit code " + exitCode);
                 } else {
                     System.err.println(command + ": command failed with exit code " + exitCode);
                 }
