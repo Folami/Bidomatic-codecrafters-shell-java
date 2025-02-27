@@ -133,6 +133,24 @@ public class Main {
         }
     }
 
+    private static void executeType(List<String> args) {
+        if (args.isEmpty()) {
+            System.out.println("type: missing operand");
+            return;
+        }
+        String targetCommand = args.get(0);
+        if (shBuiltins.contains(targetCommand)) {
+            System.out.println(targetCommand + " is a shell builtin");
+            } else {
+            String executable = findExecutable(targetCommand);
+            if (executable != null) {
+                System.out.println(targetCommand + " is " + executable);
+            } else {
+                System.out.println(targetCommand + ": not found");
+            }
+        }
+    }
+
     private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
     }
