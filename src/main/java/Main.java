@@ -79,15 +79,24 @@ public class Main {
 
     private static void executeEcho(List<String> args) throws IOException {
         String outputFile = null;
+        String errorFile = null;
         List<String> echoArgs = new ArrayList<>();
 
         for (int i = 0; i < args.size(); i++) {
             if (args.get(i).equals(">") || args.get(i).equals("1>")) {
                 if (i + 1 < args.size()) {
                     outputFile = args.get(i + 1);
-                    i++; // Skip the next argument (file name)
+                    i++; // Skip file name
                 } else {
                     System.err.println("Syntax error: no file specified for redirection");
+                    return;
+                }
+            } else if (args.get(i).equals("2>")) {
+                if (i + 1 < args.size()) {
+                    errorFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for error redirection");
                     return;
                 }
             } else {
@@ -101,10 +110,15 @@ public class Main {
             try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFile))) {
                 out.println(output);
             }
+        } else if (errorFile != null) {
+            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFile))) {
+                errOut.println(output);
+            }
         } else {
             System.out.println(output);
         }
     }
+
 
 
     private static void executeType(List<String> args) {
