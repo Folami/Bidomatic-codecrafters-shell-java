@@ -210,11 +210,7 @@ public class Main {
             processBuilder.redirectOutput(ProcessBuilder.Redirect.to(new File(outputFile)));
             processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
         } else if (errorFile != null) {
-            try {
-                processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
-            } catch (IOException e) {
-                // Ignore the exception when redirecting stderr to a non-existent file
-            }
+            processBuilder.redirectError(ProcessBuilder.Redirect.to(new File(errorFile)));
         } else {
             processBuilder.redirectErrorStream(true);
         }
