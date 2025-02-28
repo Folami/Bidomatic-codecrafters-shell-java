@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 
 
 public class Main {
@@ -44,23 +43,48 @@ public class Main {
 
     private static String inputPrompt() {
         System.out.print("$ ");
-        Scanner scanner = new Scanner(System.in);
-        String line = scanner.nextLine();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            StringBuilder input = new StringBuilder();
+            while (true) {
+                int charRead = reader.read(); // Read character-by-character
+                if (charRead == -1) { // EOF
+                    return null;
+                } else if (charRead == '\n') { // Enter key
+                    System.out.println(); // Move to next line
+                    String result = input.toString().trim();
+                    return result.isEmpty() ? "" : result;
+                } else if (charRead == '\t') { // Tab key for autocompletion
+                    String partialInput = input.toString().trim();
+                    List<String> suggestions = getCommandSuggestions(partialInput);
+                    if (suggestions.size() == 1) {
+                        input = new StringBuilder(suggestions.get(0)); // Complete the command
+                        System.out.print("\r$ " + input + " "); // Overwrite prompt with completion
+                    } else if (!suggestions.isEmpty()) {
+                        System.out.print("\n" + String.join("  ", suggestions) + "\n$ " + partialInput);
+                    } else {
+                        System.out.print("\r$ " + partialInput + " "); // Re-display input with no change
+                    }
+                    System.out.flush();
+                } else {
+                    input.append((char) charRead);
+                    System.out.print((char) charRead); // Echo character
+                    System.out.flush();
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
-        // Autocomplete built-in commands
-        if (line.length() > 0 && shBuiltins.stream().anyMatch(cmd -> cmd.startsWith(line))) {
-            List<String> matches = shBuiltins.stream().filter(cmd -> cmd.startsWith(line)).toList();
-            if (matches.size() == 1) {
-                line = matches.get(0);
-                System.out.print(line); // Print the completed command
-                System.out.println(" "); //Add space after autocompletion
-            } else if (matches.size() > 1) {
-                System.out.println(String.join(" ", matches)); // Print all possible completions
-                System.out.print("$ " + line); // Reprompt with the original input
-                line = scanner.nextLine();
+    private static List<String> getCommandSuggestions(String partialInput) {
+        List<String> suggestions = new ArrayList<>();
+        for (String builtin : shBuiltins) {
+            if (builtin.startsWith(partialInput)) {
+                suggestions.add(builtin);
             }
         }
-        return line;
+        return suggestions;
     }
 
     private static void executeCommand(String command, List<String> args) throws IOException {
