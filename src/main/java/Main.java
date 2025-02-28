@@ -10,71 +10,11 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-
-// ...
-
-
-
 
 public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
-    private static Set<String> builtins = new HashSet<>(List.of("exit", "echo", "pwd", "type", "cd"));
-    private static StringBuilder currentCommand = new StringBuilder();
-
-    private static String inputPrompt() {
-        System.out.print("$ ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            // Listen for tab key press
-            reader = new BufferedReader(new InputStreamReader(System.in) {
-                @Override
-                public int read() throws IOException {
-                    int c = super.read();
-                    if (c == '\t') {
-                        // Get current command
-                        String command = getCommand();
-                        // Autocomplete command
-                        String completedCommand = autocompleteCommand(command);
-                        if (completedCommand != null) {
-                            System.out.println();
-                            System.out.print("$ " + completedCommand);
-                            System.out.flush();
-                        }
-                    } else if (c == '\r' || c == '\n') {
-                        // Reset current command
-                        currentCommand.setLength(0);
-                    } else {
-                        // Append character to current command
-                        currentCommand.append((char) c);
-                    }
-                    return c;
-                }
-            });
-            return reader.readLine();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private static String getCommand() {
-        return currentCommand.toString();
-    }
-
-    private static String autocompleteCommand(String command) {
-        // Check if command is a partial match for any builtin command
-        for (String builtin : builtins) {
-            if (builtin.startsWith(command)) {
-                return builtin;
-            }
-        }
-        return null;
-    }
 
     public static void main(String[] args) {
         while (true) {
@@ -97,6 +37,16 @@ public class Main {
             } catch (IOException e) {
                 System.out.println("An error occurred: " + e.getMessage());
             }
+        }
+    }
+
+    private static String inputPrompt() {
+        System.out.print("$ ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            return null;
         }
     }
 
