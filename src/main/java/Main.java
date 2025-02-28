@@ -11,7 +11,6 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
-
 public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
@@ -45,46 +44,10 @@ public class Main {
         System.out.print("$ ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            StringBuilder input = new StringBuilder();
-            while (true) {
-                int charRead = reader.read(); // Read character-by-character
-                if (charRead == -1) { // EOF
-                    return null;
-                } else if (charRead == '\n') { // Enter key
-                    System.out.println(); // Move to next line
-                    String result = input.toString().trim();
-                    return result.isEmpty() ? "" : result;
-                } else if (charRead == '\t') { // Tab key for autocompletion
-                    String partialInput = input.toString().trim();
-                    List<String> suggestions = getCommandSuggestions(partialInput);
-                    if (suggestions.size() == 1) {
-                        input = new StringBuilder(suggestions.get(0)); // Complete the command
-                        System.out.print("\r$ " + input + " "); // Overwrite prompt with completion
-                    } else if (!suggestions.isEmpty()) {
-                        System.out.print("\n" + String.join("  ", suggestions) + "\n$ " + partialInput);
-                    } else {
-                        System.out.print("\r$ " + partialInput + " "); // Re-display input with no change
-                    }
-                    System.out.flush();
-                } else {
-                    input.append((char) charRead);
-                    System.out.print((char) charRead); // Echo character
-                    System.out.flush();
-                }
-            }
+            return reader.readLine();
         } catch (IOException e) {
             return null;
         }
-    }
-
-    private static List<String> getCommandSuggestions(String partialInput) {
-        List<String> suggestions = new ArrayList<>();
-        for (String builtin : shBuiltins) {
-            if (builtin.startsWith(partialInput)) {
-                suggestions.add(builtin);
-            }
-        }
-        return suggestions;
     }
 
     private static void executeCommand(String command, List<String> args) throws IOException {
@@ -424,7 +387,7 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
-
+    
     public static class Shlex {
 
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
