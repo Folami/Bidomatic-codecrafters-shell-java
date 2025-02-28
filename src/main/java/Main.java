@@ -10,6 +10,14 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.Console;
+import java.util.stream.Collectors;
+
+
+
+
+
+
 
 public class Main {
 
@@ -41,12 +49,61 @@ public class Main {
     }
 
     private static String inputPrompt() {
+        Console console = System.console();
+        if (console == null) {
+            // Fallback for non-interactive terminals
+            System.out.print("$ ");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                return reader.readLine();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
         System.out.print("$ ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        StringBuilder inputBuffer = new StringBuilder();
         try {
-            return reader.readLine();
+            while (true) {
+                int key = System.in.read();
+                if (key == '\n') {
+                    System.out.println();
+                    return inputBuffer.toString();
+                } else if (key == '\t') {
+                    // Handle autocompletion
+                    String completed = AutoCompleter.complete(inputBuffer.toString());
+                    System.out.print("\r$ " + completed); // Overwrite with the completed command
+                    inputBuffer.setLength(0);
+                    inputBuffer.append(completed);
+                } else if (key == 127 || key == 8) { // Handle backspace
+                    if (inputBuffer.length() > 0) {
+                        inputBuffer.setLength(inputBuffer.length() - 1);
+                        System.out.print("\b \b");
+                    }
+                } else {
+                    inputBuffer.append((char) key);
+                    System.out.print((char) key);
+                }
+            }
         } catch (IOException e) {
             return null;
+        }
+    }
+
+    public class AutoCompleter {
+        
+        private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
+
+        public static String complete(String partial) {
+            List<String> matches = builtins.stream()
+                .filter(cmd -> cmd.startsWith(partial))
+                .collect(Collectors.toList());
+
+            if (matches.size() == 1) {
+                return matches.get(0) + " "; // Add space after completion
+            } else {
+                return partial; // No unique match, keep input unchanged
+            }
         }
     }
 
@@ -387,7 +444,8 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
-    
+
+
     public static class Shlex {
 
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
