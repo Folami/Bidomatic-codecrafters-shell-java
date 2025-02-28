@@ -25,6 +25,7 @@ public class Main {
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
     private static Set<String> builtins = new HashSet<>(List.of("exit", "echo", "pwd", "type", "cd"));
+    private static StringBuilder currentCommand = new StringBuilder();
 
     private static String inputPrompt() {
         System.out.print("$ ");
@@ -45,6 +46,12 @@ public class Main {
                             System.out.print("$ " + completedCommand);
                             System.out.flush();
                         }
+                    } else if (c == '\r' || c == '\n') {
+                        // Reset current command
+                        currentCommand.setLength(0);
+                    } else {
+                        // Append character to current command
+                        currentCommand.append((char) c);
                     }
                     return c;
                 }
@@ -56,10 +63,7 @@ public class Main {
     }
 
     private static String getCommand() {
-        // Get current command being typed
-        // This can be implemented by keeping track of the user's input
-        // For simplicity, let's assume we have a variable 'currentCommand'
-        return currentCommand;
+        return currentCommand.toString();
     }
 
     private static String autocompleteCommand(String command) {
