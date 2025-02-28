@@ -6,40 +6,16 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.impl.completer.StringsCompleter;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
-
 
 public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
-    private static final List<String> shBuiltins = Arrays.asList("echo", "exit", "type", "pwd", "cd");
-    private static LineReader reader;
+    private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
-    static {
-        try {
-            Terminal terminal = TerminalBuilder.builder().build();
-            reader = LineReaderBuilder.builder()
-                    .terminal(terminal)
-                    .completer(new StringsCompleter(shBuiltins))
-                    .build();
-        } catch (IOException e) {
-            System.err.println("Error initializing terminal: " + e.getMessage());
-            System.exit(1);
-        }
-    }
-
-    private static String inputPrompt() {
-        return reader.readLine("$ ");
-    }
 
     public static void main(String[] args) {
         while (true) {
@@ -65,6 +41,15 @@ public class Main {
         }
     }
 
+    private static String inputPrompt() {
+        System.out.print("$ ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
     private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
