@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
+
 
 public class Main {
 
@@ -42,12 +44,23 @@ public class Main {
 
     private static String inputPrompt() {
         System.out.print("$ ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            return reader.readLine();
-        } catch (IOException e) {
-            return null;
+        Scanner scanner = new Scanner(System.in);
+        String line = scanner.nextLine();
+
+        // Autocomplete built-in commands
+        if (line.length() > 0 && shBuiltins.stream().anyMatch(cmd -> cmd.startsWith(line))) {
+            List<String> matches = shBuiltins.stream().filter(cmd -> cmd.startsWith(line)).toList();
+            if (matches.size() == 1) {
+                line = matches.get(0);
+                System.out.print(line); // Print the completed command
+                System.out.println(" "); //Add space after autocompletion
+            } else if (matches.size() > 1) {
+                System.out.println(String.join(" ", matches)); // Print all possible completions
+                System.out.print("$ " + line); // Reprompt with the original input
+                line = scanner.nextLine();
+            }
         }
+        return line;
     }
 
     private static void executeCommand(String command, List<String> args) throws IOException {
