@@ -1,343 +1,340 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.io.Console;
+import java.util.stream.Collectors;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Main {
-    // Store the initial working directory as the shell's home
-    private static final String homeDirectory = System.getProperty("user.dir");
-    // List of built-in commands supported by the shell
-    private static final List<String> builtinCommands = List.of("echo", "exit", "type", "pwd", "cd");
-    // List to hold possible tab completion options
-    private static List<String> tabCompletionOptions = new ArrayList<>();
-    // Counter to track the number of Tab presses for autocompletion
-    private static int tabPressCount = 0;
+
+    private static final String shellHome = System.getProperty("user.dir");
+    private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
     public static void main(String[] args) {
-        // Run the shell in a continuous loop
         while (true) {
-            // Get user input from the prompt
-            String commandLine = getUserInput();
-            // Skip empty or null input
+            String commandLine = inputPrompt();
             if (commandLine == null || commandLine.isEmpty()) {
                 continue;
             }
             try {
-                // Parse the command line into tokens using Shlex
                 List<String> tokens = Shlex.split(commandLine, true, true);
-                // Skip if no tokens are parsed
                 if (tokens == null || tokens.isEmpty()) {
                     continue;
                 }
-                // Extract command and arguments
+
                 String command = tokens.get(0);
-                List<String> arguments = tokens.subList(1, tokens.size());
-                // Execute the command
-                runCommand(command, arguments);
+                List<String> commandArgs = tokens.subList(1, tokens.size());
+                executeCommand(command, commandArgs);
+
             } catch (IllegalArgumentException e) {
-                // Report parsing errors
                 System.out.println("Error parsing command: " + e.getMessage());
             } catch (IOException e) {
-                // Report I/O errors
                 System.out.println("An error occurred: " + e.getMessage());
             }
         }
     }
 
-    private static String getUserInput() {
-        /*
-         * Prompts for and returns user input, handling Tab for autocompletion.
-         * Uses BufferedReader for character-by-character input to detect Tab presses.
-         */
-        System.out.print("$ ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        StringBuilder inputBuffer = new StringBuilder();
-        try {
-            while (true) {
-                // Read a single character from input
-                int charRead = reader.read();
-                // Handle end-of-input (Ctrl+D or EOF)
-                if (charRead == -1) {
-                    return null;
-                }
-                // Handle Enter key to submit input
-                else if (charRead == '\n') {
-                    System.out.println();  // Move to next line
-                    String input = inputBuffer.toString().trim();
-                    return input.isEmpty() ? "" : input;  // Return trimmed input or empty string
-                }
-                // Handle Tab key for autocompletion
-                else if (charRead == '\t') {
-                    String currentText = inputBuffer.toString().trim();
-                    String completed = complete(currentText, tabPressCount);
-                    if (completed != null) {
-                        // Overwrite prompt with completed text if a completion is returned
-                        inputBuffer.setLength(0);
-                        inputBuffer.append(completed);
-                        System.out.print("\r$ " + inputBuffer);
-                    }
-                    System.out.flush();
-                }
-                // Handle backspace (ASCII 127 or 8)
-                else if (charRead == 127 || charRead == 8) {
-                    if (inputBuffer.length() > 0) {
-                        // Remove last character and update display
-                        inputBuffer.setLength(inputBuffer.length() - 1);
-                        System.out.print("\b \b");
-                    }
-                }
-                // Append any other character to input
-                else {
-                    inputBuffer.append((char) charRead);
-                    System.out.print((char) charRead);
-                    System.out.flush();
-                }
-            }
-        } catch (IOException e) {
-            return null;  // Return null on I/O error
-        }
-    }
-
-    private static String complete(String currentText, int state) {
-        /*
-         * Handles tab completion for built-ins and external commands.
-         * Args:
-         *   currentText: The text to be completed.
-         *   state: The number of Tab presses (tracked externally).
-         * Returns: The completed text or null.
-         */
-        // On first Tab press, gather options
-        if (state == 0) {
-            tabCompletionOptions = collectCompletionOptions(currentText);
-            if (tabCompletionOptions.size() > 1) {
-                // Compute longest common prefix for multiple matches
-                String commonPrefix = computeLongestCommonPrefix(tabCompletionOptions);
-                if (!commonPrefix.equals(currentText)) {
-                    return commonPrefix;  // Return LCP if it extends input
-                }
-            }
-            // Handle multiple matches with bell and list behavior
-            if (tabCompletionOptions.size() > 1 && tabPressCount == 1) {
-                System.out.write(7);  // ASCII bell (\a)
-                System.out.flush();
-                return null;  // No completion yet
-            } else if (tabCompletionOptions.size() > 1 && tabPressCount == 2) {
-                // Print options with two spaces and reprint prompt
-                System.out.println("\n" + String.join("  ", tabCompletionOptions));
-                System.out.print("$ " + currentText);
-                tabPressCount = 0;  // Reset after listing
+    private static String inputPrompt() {
+        Console console = System.console();
+        if (console == null) {
+            // Fallback for non-interactive terminals
+            System.out.print("$ ");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                return reader.readLine();
+            } catch (IOException e) {
                 return null;
             }
         }
 
-        // Single match or cycling through options
-        if (state < tabCompletionOptions.size()) {
-            return tabCompletionOptions.get(state) + " ";
+        System.out.print("$ ");
+        StringBuilder inputBuffer = new StringBuilder();
+        try {
+            while (true) {
+                int key = System.in.read();
+                if (key == '\n') {
+                    System.out.println();
+                    return inputBuffer.toString();
+                } else if (key == '\t') {
+                    // Handle autocompletion
+                    String completed = AutoCompleter.complete(inputBuffer.toString());
+                    System.out.print("\r$ " + completed); // Overwrite with the completed command
+                    inputBuffer.setLength(0);
+                    inputBuffer.append(completed);
+                } else if (key == 127 || key == 8) { // Handle backspace
+                    if (inputBuffer.length() > 0) {
+                        inputBuffer.setLength(inputBuffer.length() - 1);
+                        System.out.print("\b \b");
+                    }
+                } else {
+                    inputBuffer.append((char) key);
+                    System.out.print((char) key);
+                }
+            }
+        } catch (IOException e) {
+            return null;
         }
-        tabPressCount = 0;  // Reset if no more options
-        return null;
     }
 
-    private static List<String> collectCompletionOptions(String text) {
-        /*
-         * Collects built-in and external command names matching the input text.
-         * Args:
-         *   text: The text to match against.
-         * Returns: List of matching command names.
-         */
-        List<String> builtinMatches = new ArrayList<>();
-        // Filter built-in commands that start with the input text
-        for (String cmd : builtinCommands) {
-            if (cmd.startsWith(text)) {
-                builtinMatches.add(cmd);
+
+    public class AutoCompleter {
+        private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
+        private static String currentInput = "";
+        private static int tabPressCount = 0;
+
+        public static String complete(String input) {
+            currentInput = input;
+            tabPressCount++;
+
+            List<String> matches = getCompletionOptions(input);
+            if (matches.size() == 1) {
+                return matches.get(0) + " "; // Complete to the single match
+            } else if (tabPressCount == 1) {
+                System.out.print("\a"); // Ring the bell on first tab press
+                return input; // Keep the input unchanged
+            } else if (tabPressCount == 2) {
+                System.out.println("\n" + String.join("  ", matches)); // Print all matches on second tab press
+                System.out.print("$ " + input); // Reprint the prompt
+                tabPressCount = 0; // Reset tab press count
+                return input;
             }
+            return input; // No matches or not enough tab presses
         }
 
-        // Set to store unique external executable names
-        Set<String> externalMatches = new HashSet<>();
-        String pathEnv = System.getenv("PATH");
-        if (pathEnv != null) {
-            // Split PATH into directories
-            String[] directories = pathEnv.split(File.pathSeparator);
-            for (String directory : directories) {
-                File dir = new File(directory);
-                if (dir.isDirectory()) {
-                    File[] files = dir.listFiles();
-                    if (files != null) {
-                        for (File file : files) {
-                            // Check if file is executable and matches text
-                            if (file.isFile() && Files.isExecutable(file.toPath()) && 
-                                file.getName().startsWith(text) && 
-                                !builtinCommands.contains(file.getName())) {
-                                externalMatches.add(file.getName());
+        private static List<String> getCompletionOptions(String input) {
+            List<String> options = new ArrayList<>();
+            // Add built-in command completions
+            for (String cmd : builtins) {
+                if (cmd.startsWith(input)) {
+                    options.add(cmd);
+                }
+            }
+            // Add external executable completions from PATH
+            String pathEnv = System.getenv("PATH");
+            if (pathEnv != null) {
+                String[] paths = pathEnv.split(File.pathSeparator);
+                for (String dir : paths) {
+                    try {
+                        for (File file : new File(dir).listFiles()) {
+                            if (file.isFile() && file.canExecute() && file.getName().startsWith(input) && !builtins.contains(file.getName())) {
+                                options.add(file.getName());
                             }
                         }
+                    } catch (Exception e) {
+                        continue; // Skip inaccessible directories
                     }
                 }
             }
+            return options;
         }
-
-        // Combine and sort options
-        List<String> allOptions = new ArrayList<>(builtinMatches);
-        allOptions.addAll(externalMatches);
-        allOptions.sort(String::compareTo);
-        return allOptions;
     }
 
-    private static String computeLongestCommonPrefix(List<String> options) {
-        /*
-         * Computes the longest common prefix of a list of strings.
-         * Args:
-         *   options: List of strings to compare.
-         * Returns: Longest common prefix.
-         */
-        if (options.isEmpty()) {
-            return "";
-        }
-        if (options.size() == 1) {
-            return options.get(0);
-        }
-        // Sort to compare first and last for efficiency
-        List<String> sortedOptions = new ArrayList<>(options);
-        sortedOptions.sort(String::compareTo);
-        String first = sortedOptions.get(0);
-        String last = sortedOptions.get(sortedOptions.size() - 1);
-        
-        int i = 0;
-        while (i < first.length() && i < last.length() && first.charAt(i) == last.charAt(i)) {
-            i++;
-        }
-        return first.substring(0, i);
-    }
-
-    private static void runCommand(String command, List<String> arguments) throws IOException {
-        /*
-         * Executes the given command with its arguments.
-         * Args:
-         *   command: The command to execute.
-         *   arguments: List of arguments for the command.
-         */
+    private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
             case "exit":
-                runExit();  // Exit the shell
+                exitShell();
                 break;
             case "echo":
-                runEcho(arguments);  // Run echo command
+                executeEcho(args);
                 break;
             case "type":
-                runType(arguments);  // Run type command
+                executeType(args);
                 break;
             case "pwd":
-                runPwd();  // Run pwd command
+                executePwd();
                 break;
             case "cd":
-                runCd(arguments);  // Run cd command
+                executeCd(args);
                 break;
             default:
-                runExternalCommand(command, arguments);  // Run external command
+                runExternalCommand(command, args);
                 break;
         }
     }
 
-    private static void runExit() {
-        // Exit the shell program cleanly
+    private static void exitShell() {
         System.exit(0);
     }
 
-    private static void runEcho(List<String> arguments) throws IOException {
-        /*
-         * Executes the echo command with redirection support.
-         * Args:
-         *   arguments: List of arguments for echo.
-         */
-        ParsedCommand parsed = parseRedirection(arguments);
-        String outputString = String.join(" ", parsed.commandArgs);
-        processOutput(outputString, parsed.redirections);
+    private static void executeEcho(List<String> args) throws IOException {
+        String outputFile = null;       // For stdout redirection (>)
+        String appendOutputFile = null; // For stdout append redirection (>> or 1>>)
+        String errorFile = null;        // For stderr redirection (2>)
+        String appendErrorFile = null;  // For stderr append redirection (2>>)
+        List<String> echoArgs = new ArrayList<>();
+
+        // Parse arguments for redirection
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
+                if (i + 1 < args.size()) {
+                    outputFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for redirection");
+                    return;
+                }
+            } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
+                if (i + 1 < args.size()) {
+                    appendOutputFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for append redirection");
+                    return;
+                }
+            } else if (args.get(i).equals("2>")) {
+                if (i + 1 < args.size()) {
+                    errorFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for error redirection");
+                    return;
+                }
+            } else if (args.get(i).equals("2>>")) {
+                if (i + 1 < args.size()) {
+                    appendErrorFile = args.get(i + 1);
+                    i++; // Skip file name
+                } else {
+                    System.err.println("Syntax error: no file specified for error append redirection");
+                    return;
+                }
+            } else {
+                echoArgs.add(args.get(i));
+            }
+        }
+
+        String output = String.join(" ", echoArgs);
+
+        // Handle stdout redirection (overwrite)
+        if (outputFile != null) {
+            File outputFileObj = new File(outputFile);
+            if (!outputFileObj.getParentFile().exists()) {
+                if (!outputFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for output redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(outputFileObj))) {
+                out.println(output); // Write output with newline for stdout
+            }
+        }
+        // Handle stdout redirection (append)
+        else if (appendOutputFile != null) {
+            File appendOutputFileObj = new File(appendOutputFile);
+            if (!appendOutputFileObj.getParentFile().exists()) {
+                if (!appendOutputFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for append redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter out = new java.io.PrintWriter(new java.io.FileWriter(appendOutputFileObj, true))) {
+                out.println(output); // Append output with newline
+            }
+        } else {
+            // If no stdout redirection, print to console
+            System.out.println(output);
+        }
+
+        // Handle stderr redirection (overwrite)
+        if (errorFile != null) {
+            File errorFileObj = new File(errorFile);
+            if (!errorFileObj.getParentFile().exists()) {
+                if (!errorFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for error redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(errorFileObj))) {
+                errOut.print(""); // No stderr for echo by default
+            }
+        }
+        // Handle stderr redirection (append)
+        else if (appendErrorFile != null) {
+            File appendErrorFileObj = new File(appendErrorFile);
+            if (!appendErrorFileObj.getParentFile().exists()) {
+                if (!appendErrorFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for error append redirection file");
+                    return;
+                }
+            }
+            try (java.io.PrintWriter errOut = new java.io.PrintWriter(new java.io.FileWriter(appendErrorFileObj, true))) {
+                errOut.print(""); // No stderr for echo by default, append nothing
+            }
+        }
     }
 
-    private static void runType(List<String> arguments) {
-        /*
-         * Executes the type command to identify command type.
-         * Args:
-         *   arguments: List of arguments (command to type).
-         */
-        if (arguments.isEmpty()) {
+    private static void executeType(List<String> args) {
+        if (args.isEmpty()) {
             System.out.println("type: missing operand");
             return;
         }
-        String targetCommand = arguments.get(0);
-        if (builtinCommands.contains(targetCommand)) {
+        String targetCommand = args.get(0);
+        if (shBuiltins.contains(targetCommand)) {
             System.out.println(targetCommand + " is a shell builtin");
-        } else {
-            String executablePath = findExecutable(targetCommand);
-            if (executablePath != null) {
-                System.out.println(targetCommand + " is " + executablePath);
+            } else {
+            String executable = findExecutable(targetCommand);
+            if (executable != null) {
+                System.out.println(targetCommand + " is " + executable);
             } else {
                 System.out.println(targetCommand + ": not found");
             }
         }
     }
 
-    private static void runPwd() {
-        // Prints the current working directory
+    private static void executePwd() {
         System.out.println(System.getProperty("user.dir"));
     }
 
-    private static void runCd(List<String> arguments) {
-        /*
-         * Executes the cd command to change directory.
-         * Args:
-         *   arguments: List containing the target directory.
-         */
-        if (arguments.isEmpty()) {
+    private static void executeCd(List<String> args) {
+        if (args.isEmpty()) {
             System.out.println("cd: missing operand");
             return;
         }
-        String targetDir = arguments.get(0);
-        // Expand ~ to user's home directory if present
-        if (targetDir.startsWith("~")) {
-            targetDir = System.getenv("HOME") + targetDir.substring(1);
+        String newDir = args.get(0);
+        if (newDir.startsWith("~")) {
+            newDir = System.getenv("HOME") + newDir.substring(1);
         }
         Path currentPath = Paths.get(System.getProperty("user.dir"));
-        Path newPath = currentPath.resolve(targetDir).normalize();
+        Path newPath = currentPath.resolve(newDir).normalize();
         try {
-            // Check if the new path exists and is a directory
             if (Files.exists(newPath) && Files.isDirectory(newPath)) {
                 System.setProperty("user.dir", newPath.toString());
             } else {
-                System.err.println("cd: " + targetDir + ": No such file or directory");
+                System.err.println("cd: " + newDir + ": No such file or directory");
             }
         } catch (Exception e) {
-            System.err.println("cd: " + targetDir + ": " + e.getMessage());
+            System.err.println("cd: " + newDir + ": " + e.getMessage());
         }
     }
 
+
     private static String findExecutable(String command) {
-        /*
-         * Finds the full path of an executable in PATH or current directory.
-         * Args:
-         *   command: The command to locate.
-         * Returns: Full path or null if not found.
-         */
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
-            String[] directories = pathEnv.split(File.pathSeparator);
-            for (String directory : directories) {
-                Path filePath = Paths.get(directory, command);
+            String[] paths = pathEnv.split(File.pathSeparator);
+            for (String dir : paths) {
+                Path filePath = Paths.get(dir, command);
                 if (Files.exists(filePath) && Files.isExecutable(filePath)) {
                     return filePath.toString();
                 }
             }
         }
-        // Check current directory
+        // Check in the current directory
         Path currentDir = Paths.get(System.getProperty("user.dir"));
         Path filePath = currentDir.resolve(command);
         if (Files.exists(filePath) && Files.isExecutable(filePath)) {
@@ -346,284 +343,149 @@ public class Main {
         return null;
     }
 
-    private static void runExternalCommand(String command, List<String> arguments) throws IOException {
-        /*
-         * Runs an external command with redirection support.
-         * Args:
-         *   command: The external command to run.
-         *   arguments: List of arguments for the command.
-         */
-        String executablePath = findExecutable(command);
-        if (executablePath == null) {
+
+    private static void runExternalCommand(String command, List<String> args) throws IOException {
+        if (findExecutable(command) == null) {
             System.err.println(command + ": command not found");
             return;
         }
-        ParsedCommand parsed = parseRedirection(command, arguments);
-        executeProcess(parsed.commandArgs, parsed.redirections);
-    }
-
-    private static ParsedCommand parseRedirection(String command, List<String> arguments) {
-        /*
-         * Parses redirection operators from command and arguments.
-         * Args:
-         *   command: The command string.
-         *   arguments: List of arguments.
-         * Returns: ParsedCommand object with command args and redirections.
-         */
-        List<String> commandArgs = new ArrayList<>();
-        commandArgs.add(command);  // Start with the command itself
-        Redirections redirections = new Redirections();
-
-        for (int i = 0; i < arguments.size(); i++) {
-            String arg = arguments.get(i);
-            if (arg.equals(">") || arg.equals("1>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stdoutFile = arguments.get(i + 1);
-                    redirections.stdoutMode = "w";
-                    i++;  // Skip the filename
+        List<String> commandWithArgs = new ArrayList<>();
+        commandWithArgs.add(command);
+        
+        String outputFile = null;       // For stdout overwrite (>)
+        String appendOutputFile = null; // For stdout append (>> or 1>>)
+        String errorFile = null;        // For stderr overwrite (2>)
+        String appendErrorFile = null;  // For stderr append (2>>)
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).equals(">") || args.get(i).equals("1>")) {
+                if (i + 1 < args.size()) {
+                    outputFile = args.get(i + 1);
+                    i++; // Skip the next argument (file name)
                 } else {
                     System.err.println("Syntax error: no file specified for redirection");
+                    return;
                 }
-            } else if (arg.equals(">>") || arg.equals("1>>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stdoutFile = arguments.get(i + 1);
-                    redirections.stdoutMode = "a";
-                    i++;
+            } else if (args.get(i).equals(">>") || args.get(i).equals("1>>")) {
+                if (i + 1 < args.size()) {
+                    appendOutputFile = args.get(i + 1);
+                    i++; // Skip the next argument (file name)
                 } else {
                     System.err.println("Syntax error: no file specified for append redirection");
+                    return;
                 }
-            } else if (arg.equals("2>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stderrFile = arguments.get(i + 1);
-                    redirections.stderrMode = "w";
-                    i++;
+            } else if (args.get(i).equals("2>")) {
+                if (i + 1 < args.size()) {
+                    errorFile = args.get(i + 1);
+                    i++; // Skip the next argument (file name)
                 } else {
                     System.err.println("Syntax error: no file specified for error redirection");
+                    return;
                 }
-            } else if (arg.equals("2>>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stderrFile = arguments.get(i + 1);
-                    redirections.stderrMode = "a";
-                    i++;
+            } else if (args.get(i).equals("2>>")) {
+                if (i + 1 < args.size()) {
+                    appendErrorFile = args.get(i + 1);
+                    i++; // Skip the next argument (file name)
                 } else {
                     System.err.println("Syntax error: no file specified for error append redirection");
+                    return;
                 }
             } else {
-                commandArgs.add(arg);
+                commandWithArgs.add(args.get(i));
             }
         }
-        return new ParsedCommand(commandArgs, redirections);
-    }
 
-    private static ParsedCommand parseRedirection(List<String> arguments) {
-        /*
-         * Parses redirection operators from arguments (for echo).
-         * Args:
-         *   arguments: List of arguments.
-         * Returns: ParsedCommand object with command args and redirections.
-         */
-        List<String> commandArgs = new ArrayList<>();
-        Redirections redirections = new Redirections();
-
-        for (int i = 0; i < arguments.size(); i++) {
-            String arg = arguments.get(i);
-            if (arg.equals(">") || arg.equals("1>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stdoutFile = arguments.get(i + 1);
-                    redirections.stdoutMode = "w";
-                    i++;  // Skip the filename
-                } else {
-                    System.err.println("Syntax error: no file specified for redirection");
-                }
-            } else if (arg.equals(">>") || arg.equals("1>>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stdoutFile = arguments.get(i + 1);
-                    redirections.stdoutMode = "a";
-                    i++;
-                } else {
-                    System.err.println("Syntax error: no file specified for append redirection");
-                }
-            } else if (arg.equals("2>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stderrFile = arguments.get(i + 1);
-                    redirections.stderrMode = "w";
-                    i++;
-                } else {
-                    System.err.println("Syntax error: no file specified for error redirection");
-                }
-            } else if (arg.equals("2>>")) {
-                if (i + 1 < arguments.size()) {
-                    redirections.stderrFile = arguments.get(i + 1);
-                    redirections.stderrMode = "a";
-                    i++;
-                } else {
-                    System.err.println("Syntax error: no file specified for error append redirection");
-                }
-            } else {
-                commandArgs.add(arg);
-            }
-        }
-        return new ParsedCommand(commandArgs, redirections);
-    }
-
-    private static void processOutput(String outputString, Redirections redirections) throws IOException {
-        /*
-         * Processes output based on redirection settings for echo.
-         * Args:
-         *   outputString: The string to output.
-         *   redirections: Redirection settings.
-         */
-        try {
-            // Handle stdout redirection
-            if (redirections.stdoutFile != null) {
-                File stdoutFile = new File(redirections.stdoutFile);
-                if (!stdoutFile.getParentFile().exists()) {
-                    if (!stdoutFile.getParentFile().mkdirs()) {
-                        System.err.println("Error: unable to create directory for output redirection file");
-                        return;
-                    }
-                }
-                try (java.io.PrintWriter out = new java.io.PrintWriter(
-                        new java.io.FileWriter(stdoutFile, redirections.stdoutMode.equals("a")))) {
-                    out.println(outputString);  // Write with newline
-                }
-            } else {
-                // No redirection, print to console
-                System.out.println(outputString);
-            }
-
-            // Handle stderr redirection (empty for echo)
-            if (redirections.stderrFile != null) {
-                File stderrFile = new File(redirections.stderrFile);
-                if (!stderrFile.getParentFile().exists()) {
-                    if (!stderrFile.getParentFile().mkdirs()) {
-                        System.err.println("Error: unable to create directory for error redirection file");
-                        return;
-                    }
-                }
-                try (java.io.PrintWriter errOut = new java.io.PrintWriter(
-                        new java.io.FileWriter(stderrFile, redirections.stderrMode.equals("a")))) {
-                    errOut.print("");  // Empty stderr output
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("echo: " + e.getMessage());
-        }
-    }
-
-    private static void executeProcess(List<String> commandArgs, Redirections redirections) throws IOException {
-        /*
-         * Executes an external process with redirection support.
-         * Args:
-         *   commandArgs: List of command and arguments.
-         *   redirections: Redirection settings.
-         */
-        ProcessBuilder processBuilder = new ProcessBuilder(commandArgs);
-        // Configure stdout redirection
-        if (redirections.stdoutFile != null) {
-            File stdoutFile = new File(redirections.stdoutFile);
-            if (!stdoutFile.getParentFile().exists()) {
-                if (!stdoutFile.getParentFile().mkdirs()) {
+        ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs);
+        if (outputFile != null) {
+            File outputFileObj = new File(outputFile);
+            if (!outputFileObj.getParentFile().exists()) {
+                if (!outputFileObj.getParentFile().mkdirs()) {
                     System.err.println("Error: unable to create directory for output redirection file");
                     return;
                 }
             }
-            processBuilder.redirectOutput(
-                redirections.stdoutMode.equals("w") ? 
-                ProcessBuilder.Redirect.to(stdoutFile) : 
-                ProcessBuilder.Redirect.appendTo(stdoutFile)
-            );
-            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);  // Capture stderr if stdout redirected
-        }
-        // Configure stderr redirection
-        if (redirections.stderrFile != null) {
-            File stderrFile = new File(redirections.stderrFile);
-            if (!stderrFile.getParentFile().exists()) {
-                if (!stderrFile.getParentFile().mkdirs()) {
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.to(outputFileObj));
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+        } else if (appendOutputFile != null) {
+            File appendOutputFileObj = new File(appendOutputFile);
+            if (!appendOutputFileObj.getParentFile().exists()) {
+                if (!appendOutputFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for append redirection file");
+                    return;
+                }
+            }
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(appendOutputFileObj));
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE); // Capture error stream
+        } else if (errorFile != null) {
+            File errorFileObj = new File(errorFile);
+            if (!errorFileObj.getParentFile().exists()) {
+                if (!errorFileObj.getParentFile().mkdirs()) {
                     System.err.println("Error: unable to create directory for error redirection file");
                     return;
                 }
             }
-            processBuilder.redirectError(
-                redirections.stderrMode.equals("w") ? 
-                ProcessBuilder.Redirect.to(stderrFile) : 
-                ProcessBuilder.Redirect.appendTo(stderrFile)
-            );
-        }
-        // Merge stderr into stdout if no stderr redirection
-        if (redirections.stdoutFile == null && redirections.stderrFile == null) {
+            processBuilder.redirectError(ProcessBuilder.Redirect.to(errorFileObj));
+        } else if (appendErrorFile != null) {
+            File appendErrorFileObj = new File(appendErrorFile);
+            if (!appendErrorFileObj.getParentFile().exists()) {
+                if (!appendErrorFileObj.getParentFile().mkdirs()) {
+                    System.err.println("Error: unable to create directory for error append redirection file");
+                    return;
+                }
+            }
+            processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(appendErrorFileObj));
+        } else {
             processBuilder.redirectErrorStream(true);
         }
 
         try {
             Process process = processBuilder.start();
-            // Handle output/error streams based on redirection
-            if (redirections.stdoutFile == null && redirections.stderrFile == null) {
-                // No redirection, print combined output
+            if (outputFile == null && appendOutputFile == null && errorFile == null && appendErrorFile == null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         System.out.println(line);
                     }
                 }
-            } else if (redirections.stdoutFile != null && redirections.stderrFile == null) {
-                // Stdout redirected, print stderr
-                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String errorLine;
-                    while ((errorLine = errorReader.readLine()) != null) {
-                        System.err.println(errorLine);
+            } else if (outputFile != null || appendOutputFile != null) {
+                if (errorFile == null && appendErrorFile == null) {
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String errorLine;
+                        while ((errorLine = errorReader.readLine()) != null) {
+                            System.err.println(errorLine); // Print error messages
+                        }
                     }
                 }
-            } else if (redirections.stderrFile != null && redirections.stdoutFile == null) {
-                // Stderr redirected, print stdout
+            } else if (errorFile != null || appendErrorFile != null) {
                 try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String outputLine;
                     while ((outputLine = outputReader.readLine()) != null) {
-                        System.out.println(outputLine);
+                        System.out.println(outputLine); // Print output
                     }
                 }
             }
-            // Wait for process completion and check exit code
             int exitCode = process.waitFor();
-            if (exitCode != 0 && redirections.stdoutFile == null && redirections.stderrFile == null) {
-                System.err.println(commandArgs.get(0) + ": command failed with exit code " + exitCode);
+            if (exitCode != 0) {
+                if (outputFile != null || appendOutputFile != null || errorFile != null || appendErrorFile != null) {
+                    // Do not print generic error message if output or error is redirected
+                } else {
+                    System.err.println(command + ": command failed with exit code " + exitCode);
+                }
             }
         } catch (IOException e) {
             if (e.getMessage().contains("Cannot run program")) {
-                System.err.println(commandArgs.get(0) + ": command not found");
+                System.err.println(command + ": command not found");
             } else {
-                System.err.println(commandArgs.get(0) + ": " + e.getMessage());
+                System.err.println(command + ": " + e.getMessage());
             }
         } catch (InterruptedException e) {
-            System.err.println(commandArgs.get(0) + ": process interrupted");
+            System.err.println(command + ": process interrupted");
             Thread.currentThread().interrupt();
         }
     }
 
-    // Helper class to store parsed command and redirection info
-    private static class ParsedCommand {
-        List<String> commandArgs;
-        Redirections redirections;
 
-        ParsedCommand(List<String> commandArgs, Redirections redirections) {
-            this.commandArgs = commandArgs;
-            this.redirections = redirections;
-        }
-    }
-
-    // Helper class to store redirection settings
-    private static class Redirections {
-        String stdoutFile = null;
-        String stdoutMode = "w";  // "w" for overwrite, "a" for append
-        String stderrFile = null;
-        String stderrMode = "w";
-
-        Redirections() {}
-    }
-
-    // Shlex class remains unchanged as provided
     public static class Shlex {
-        // ... (Original Shlex implementation unchanged) ...
+
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
             if (s == null) {
                 throw new IllegalArgumentException("s argument must not be null");
@@ -648,14 +510,14 @@ public class Main {
         private String escape = "\\";
         private String escapedquotes = "\"";
         private String state = " ";
-        private java.util.Deque<String> pushback = new java.util.LinkedList<>();
+        private Deque<String> pushback = new LinkedList<>();
         private int lineno = 1;
         private int debug = 0;
         private String token = "";
-        private java.util.Deque<Object[]> filestack = new java.util.LinkedList<>();
+        private Deque<Object[]> filestack = new LinkedList<>();
         private String source = null;
         private String punctuationChars = "";
-        private java.util.Deque<Character> pushbackChars = new java.util.LinkedList<>();
+        private Deque<Character> pushbackChars = new LinkedList<>();
 
         public Shlex(String instream, String infile, boolean posix, String punctuationChars) {
             this.instream = new StringReader(instream);
