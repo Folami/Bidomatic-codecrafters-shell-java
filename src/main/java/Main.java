@@ -26,7 +26,7 @@ public class Main {
             List<String> matches = builtins.stream()
                     .filter(cmd -> cmd.startsWith(partial))
                     .collect(Collectors.toList());
-                    
+
             if (!matches.isEmpty()) {
                 return matches.get(0);
             } else {
@@ -415,10 +415,9 @@ public class Main {
                     return inputBuffer.toString();
                 } else if (key == '\t') {
                     String completed = AutoCompleter.complete(inputBuffer.toString());
-                    System.out.print("\r$ "); // Clear the line completely
-                    System.out.print(completed); // Print the completed command
                     inputBuffer.setLength(0);   // Clear the buffer
                     inputBuffer.append(completed); // Append only the completed command
+                    System.out.print("\r$ " + completed); // Clear the line completely and print the completed command
                 } else if (key == 127 || key == 8) { // Handle backspace
                     if (inputBuffer.length() > 0) {
                         inputBuffer.setLength(inputBuffer.length() - 1);
@@ -433,6 +432,7 @@ public class Main {
             return null;
         }
     }
+
 
 
     private static void executeCommand(String command, List<String> args) throws IOException {
