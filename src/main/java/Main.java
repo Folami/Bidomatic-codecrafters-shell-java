@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 
 public class Main {
-
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
@@ -36,7 +35,6 @@ public class Main {
     }
     
     public static class Shlex {
-
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
             if (s == null) {
                 throw new IllegalArgumentException("s argument must not be null");
