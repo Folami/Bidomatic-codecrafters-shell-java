@@ -18,9 +18,7 @@ public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
-    // Shlex object for parsing shell commands
-    private static final Shlex shlex = new Shlex();
-
+    
     public static class Shlex {
 
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
