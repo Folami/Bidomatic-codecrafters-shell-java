@@ -18,6 +18,8 @@ public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
+    // Shlex object for parsing shell commands
+    private static final Shlex shlex = new Shlex();
 
     public static void main(String[] args) {
         while (true) {
