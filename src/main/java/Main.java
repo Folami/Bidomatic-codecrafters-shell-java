@@ -1,6 +1,6 @@
 import java.io.*;
 import java.nio.*;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.*;
 
 
@@ -9,6 +9,7 @@ public class Main {
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
     private static List<String> tabCompletionOptions = new ArrayList<>();  // Store completion options
     private static int tabPressCount = 0;  // Track Tab presses
+    Paths
 
     public static class AutoCompleter {
         private static final List<String> builtins = List.of("echo", "exit", "type", "pwd", "cd");
