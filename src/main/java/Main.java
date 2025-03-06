@@ -1,36 +1,101 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.io.Console;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.nio.*;
+import java.util.*;
 
 
 public class Main {
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
+    private static List<String> tabCompletionOptions = new ArrayList<>();  // Store completion options
+    private static int tabPressCount = 0;  // Track Tab presses
 
-    public static class AutoCompleter { // Moved outside Main class
-        private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
-
-        public static String complete(String partial) {
-            List<String> matches = builtins.stream()
-                    .filter(cmd -> cmd.startsWith(partial))
-                    .collect(Collectors.toList());
-
-            if (!matches.isEmpty()) {
-                return matches.get(0);
-            } else {
-                return partial;
+    public static class AutoCompleter {
+        private static final List<String> builtins = List.of("echo", "exit", "type", "pwd", "cd");
+        public static String complete(String currentText, int state) {
+            /*
+             * Handles tab completion for built-in commands.
+             * Args:
+             *   currentText: The text to be completed (e.g., "ech").
+             *   state: The number of Tab presses.
+             * Returns: The completed text or null if no completion yet.
+             */
+            if (state == 0) {  // First Tab press
+                tabPressCount++;  // Increment Tab press counter
+                tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
+                if (tabCompletionOptions.size() == 1) {
+                    return tabCompletionOptions.get(0) + " ";  // Single match, return with space
+                } else if (tabCompletionOptions.size() > 1) {
+                    // Multiple matches, compute longest common prefix
+                    String commonPrefix = computeLongestCommonPrefix(tabCompletionOptions);
+                    if (!commonPrefix.equals(currentText)) {
+                        return commonPrefix + " ";  // Return LCP if it extends input
+                    }
+                    // If LCP is same as input, ring bell on first Tab
+                    if (tabPressCount == 1) {
+                        System.out.write(7);  // ASCII bell
+                        System.out.flush();
+                        return null;
+                    }
+                }
             }
+
+            // Handle multiple matches on subsequent Tab presses
+            if (tabCompletionOptions.size() > 1 && tabPressCount == 2) {
+                // Print options with two spaces and reprint prompt
+                System.out.println("\n" + String.join("  ", tabCompletionOptions));
+                System.out.print("$ " + currentText);
+                tabPressCount = 0;  // Reset after listing
+                return null;
+            }
+
+            // Cycle through options if available
+            if (state < tabCompletionOptions.size()) {
+                return tabCompletionOptions.get(state) + " ";
+            }
+            tabPressCount = 0;  // Reset if no more options
+            return null;
+        }
+
+        private static List<String> getCompletionOptions(String text) {
+            /*
+             * Collects built-in command names matching the input text.
+             * Args:
+             *   text: The text to match against (e.g., "ech").
+             * Returns: List of matching command names.
+             */
+            List<String> builtinMatches = new ArrayList<>();
+            // Filter built-ins that start with the input text
+            for (String cmd : builtins) {
+                if (cmd.startsWith(text)) {
+                    builtinMatches.add(cmd);
+                }
+            }
+            return builtinMatches;
+        }
+
+        private static String computeLongestCommonPrefix(List<String> options) {
+            /*
+             * Computes the longest common prefix of a list of strings.
+             * Args:
+             *   options: List of strings to compare.
+             * Returns: Longest common prefix.
+             */
+            if (options.isEmpty()) {
+                return "";
+            }
+            if (options.size() == 1) {
+                return options.get(0);
+            }
+            // Sort to compare first and last for efficiency
+            List<String> sortedOptions = new ArrayList<>(options);
+            sortedOptions.sort(String::compareTo);
+            String first = sortedOptions.get(0);
+            String last = sortedOptions.get(sortedOptions.size() - 1);
+            int i = 0;
+            while (i < first.length() && i < last.length() && first.charAt(i) == last.charAt(i)) {
+                i++;
+            }
+            return first.substring(0, i);
         }
     }
     
@@ -391,6 +456,10 @@ public class Main {
     }
 
     private static String inputPrompt() {
+        /*
+         * Prompts for and returns user input, handling Tab for autocompletion.
+         * Returns: The user input string or null on error/EOF.
+         */
         Console console = System.console();
         if (console == null) {
             // Fallback for non-interactive terminals
@@ -407,44 +476,41 @@ public class Main {
         StringBuilder inputBuffer = new StringBuilder();
         try {
             while (true) {
-                int key = System.in.read();
-                if (key == '\n') {
+                int key = System.in.read();  // Read a single character
+                if (key == '\n') {  // Enter key submits input
                     System.out.println();
-                    return inputBuffer.toString();
-                } else if (key == '\t') {
-                    // Get the completed command
-                    String completed = AutoCompleter.complete(inputBuffer.toString());
-
-                    // Clear the current line and reprint with completed command
-                    System.out.print("\r");          // Return to beginning of line
-                    System.out.print("$ " + completed);  // Print prompt and completed command
-
-                    // Clear the remaining part of the line
-                    for (int i = inputBuffer.length(); i < completed.length(); i++) {
-                        System.out.print(" ");
+                    return inputBuffer.toString().trim();
+                } else if (key == '\t') {  // Tab key triggers autocompletion
+                    String currentText = inputBuffer.toString().trim();
+                    String completed = AutoCompleter.complete(currentText, tabPressCount);
+                    if (completed != null) {
+                        // Clear current line and display completed text
+                        System.out.print("\r$ ");  // Return to start of line
+                        System.out.print(completed);  // Print completed command
+                        // Clear any remaining characters from previous input
+                        int extraLength = Math.max(0, inputBuffer.length() - completed.length());
+                        for (int i = 0; i < extraLength; i++) {
+                            System.out.print(" ");
+                        }
+                        System.out.print("\r$ " + completed);  // Move cursor back
+                        inputBuffer.setLength(0);
+                        inputBuffer.append(completed.trim());  // Update buffer
                     }
-
-                    // Move the cursor back to the end of the completed command
-                    System.out.print("\r$ " + completed);
-
-                    // Update input buffer with completed command
-                    inputBuffer.setLength(0);
-                    inputBuffer.append(completed);
-                } else if (key == 127 || key == 8) { // Handle backspace
+                    System.out.flush();
+                } else if (key == 127 || key == 8) {  // Backspace key
                     if (inputBuffer.length() > 0) {
                         inputBuffer.setLength(inputBuffer.length() - 1);
-                        System.out.print("\b \b");
+                        System.out.print("\b \b");  // Erase last character
                     }
                 } else {
-                    inputBuffer.append((char) key);
-                    System.out.print((char) key);
+                    inputBuffer.append((char) key);  // Append character to buffer
+                    System.out.print((char) key);  // Display character
                 }
             }
         } catch (IOException e) {
-            return null;
+            return null;  // Return null on I/O error
         }
     }
-
 
 
     private static void executeCommand(String command, List<String> args) throws IOException {
@@ -785,5 +851,4 @@ public class Main {
         }
     }
 }
-
 
