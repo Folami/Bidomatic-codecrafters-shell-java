@@ -451,54 +451,7 @@ public class Main {
                 executeType(args);
                 break;
             case "pwd":
-      private static String inputPrompt() {
-    Console console = System.console();
-    if (console == null) {
-        // Fallback for non-interactive terminals
-        System.out.print("$ ");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            return reader.readLine();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    System.out.print("$ ");
-    StringBuilder inputBuffer = new StringBuilder();
-    try {
-        while (true) {
-            int key = System.in.read();
-            if (key == '\n') {
-                System.out.println();
-                return inputBuffer.toString();
-            } else if (key == '\t') {
-                // Get the completed command
-                String completed = AutoCompleter.complete(inputBuffer.toString());
-                
-                // Clear the current line and reprint with completed command
-                System.out.print("\r");          // Return to beginning of line
-                System.out.print("$ ");          // Print prompt
-                System.out.print(completed);      // Print completed command
-                
-                // Update input buffer with completed command
-                inputBuffer.setLength(0);
-                inputBuffer.append(completed);
-            } else if (key == 127 || key == 8) { // Handle backspace
-                if (inputBuffer.length() > 0) {
-                    inputBuffer.setLength(inputBuffer.length() - 1);
-                    System.out.print("\b \b");
-                }
-            } else {
-                inputBuffer.append((char) key);
-                System.out.print((char) key);
-            }
-        }
-    } catch (IOException e) {
-        return null;
-    }
-}
-          executePwd();
+                executePwd();
                 break;
             case "cd":
                 executeCd(args);
