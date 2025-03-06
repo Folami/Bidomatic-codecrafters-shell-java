@@ -414,12 +414,19 @@ public class Main {
                 } else if (key == '\t') {
                     // Get the completed command
                     String completed = AutoCompleter.complete(inputBuffer.toString());
-                    
+
                     // Clear the current line and reprint with completed command
                     System.out.print("\r");          // Return to beginning of line
-                    System.out.print("$ ");          // Print prompt
-                    System.out.print(completed);      // Print completed command
-                    
+                    System.out.print("$ " + completed);  // Print prompt and completed command
+
+                    // Clear the remaining part of the line
+                    for (int i = inputBuffer.length(); i < completed.length(); i++) {
+                        System.out.print(" ");
+                    }
+
+                    // Move the cursor back to the end of the completed command
+                    System.out.print("\r$ " + completed);
+
                     // Update input buffer with completed command
                     inputBuffer.setLength(0);
                     inputBuffer.append(completed);
@@ -437,6 +444,7 @@ public class Main {
             return null;
         }
     }
+
 
 
     private static void executeCommand(String command, List<String> args) throws IOException {
