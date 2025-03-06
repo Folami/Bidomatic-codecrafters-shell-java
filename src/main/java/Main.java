@@ -19,15 +19,15 @@ public class Main {
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
 
-    public class AutoCompleter { // Moved outside Main class
+    public static class AutoCompleter { // Moved outside Main class
         private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
 
         public static String complete(String partial) {
             List<String> matches = builtins.stream()
                     .filter(cmd -> cmd.startsWith(partial))
                     .collect(Collectors.toList());
-
-            if (matches.size() == 1) {
+                    
+            if (!matches.isEmpty()) {
                 return matches.get(0);
             } else {
                 return partial;
