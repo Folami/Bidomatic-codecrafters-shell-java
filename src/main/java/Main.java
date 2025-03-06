@@ -53,6 +53,8 @@ public class Main {
         private String source = null;
         private String punctuationChars = "";
         private Deque<Character> pushbackChars = new LinkedList<>();
+        private boolean quoted = false;
+        private String escapedstate = " ";
 
         public Shlex(String instream, String infile, boolean posix, String punctuationChars) {
             this.instream = new StringReader(instream);
@@ -122,8 +124,7 @@ public class Main {
         }
 
         private String read_token() throws IOException {
-            boolean quoted = false;
-            String escapedstate = " ";
+
             while (true) {
                 char nextchar = getNextChar();
                 if (nextchar == '\n') {
