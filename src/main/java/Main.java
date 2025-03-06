@@ -18,6 +18,22 @@ public class Main {
 
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
+
+    public class AutoCompleter { // Moved outside Main class
+        private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
+
+        public static String complete(String partial) {
+            List<String> matches = builtins.stream()
+                    .filter(cmd -> cmd.startsWith(partial))
+                    .collect(Collectors.toList());
+
+            if (matches.size() == 1) {
+                return matches.get(0);
+            } else {
+                return partial;
+            }
+        }
+    }
     
     public static class Shlex {
 
@@ -418,22 +434,6 @@ public class Main {
         }
     }
 
-    public class AutoCompleter {
-        private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
-
-        public static String complete(String partial) {
-            List<String> matches = builtins.stream()
-                .filter(cmd -> cmd.startsWith(partial))
-                .collect(Collectors.toList());
-
-            if (matches.size() == 1) {
-                return matches.get(0); // Remove the extra space here
-            } else {
-                return partial;
-            }
-        }
-    }
-
 
     private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
@@ -773,3 +773,4 @@ public class Main {
         }
     }
 }
+
