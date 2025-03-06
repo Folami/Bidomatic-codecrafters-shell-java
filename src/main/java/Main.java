@@ -124,7 +124,6 @@ public class Main {
         }
 
         private String read_token() throws IOException {
-
             while (true) {
                 char nextchar = getNextChar();
                 if (nextchar == '\n') {
@@ -237,7 +236,6 @@ public class Main {
             return result;
         }
 
-
         // Helper functions (implementations below)
         private void handleWhitespace(boolean quoted) {
             if (debug >= 2) {
@@ -279,7 +277,6 @@ public class Main {
             token = String.valueOf(nextchar);
             state = "a";
         }
-
 
         private void handleOtherChar(char nextchar, boolean quoted) {
             token = String.valueOf(nextchar);
@@ -422,7 +419,6 @@ public class Main {
     }
 
     public class AutoCompleter {
-
         private static final List<String> builtins = List.of("echo", "exit", "pwd", "cd", "type");
 
         public static String complete(String partial) {
@@ -431,12 +427,13 @@ public class Main {
                 .collect(Collectors.toList());
 
             if (matches.size() == 1) {
-                return matches.get(0) + " "; // Add space after completion
+                return matches.get(0); // Remove the extra space here
             } else {
-                return partial; // No unique match, keep input unchanged
+                return partial;
             }
         }
     }
+
 
     private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
