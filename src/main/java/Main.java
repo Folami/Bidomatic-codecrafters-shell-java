@@ -414,11 +414,11 @@ public class Main {
                     System.out.println();
                     return inputBuffer.toString();
                 } else if (key == '\t') {
-                    // Handle autocompletion
                     String completed = AutoCompleter.complete(inputBuffer.toString());
-                    System.out.print("\r$ " + completed); // Overwrite with the completed command
-                    inputBuffer.setLength(0);
-                    inputBuffer.append(completed);
+                    System.out.print("\r$ "); // Clear the line completely
+                    System.out.print(completed); // Print the completed command
+                    inputBuffer.setLength(0);   // Clear the buffer
+                    inputBuffer.append(completed); // Append only the completed command
                 } else if (key == 127 || key == 8) { // Handle backspace
                     if (inputBuffer.length() > 0) {
                         inputBuffer.setLength(inputBuffer.length() - 1);
@@ -773,4 +773,5 @@ public class Main {
         }
     }
 }
+
 
