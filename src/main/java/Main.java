@@ -414,10 +414,17 @@ public class Main {
                     System.out.println();
                     return inputBuffer.toString();
                 } else if (key == '\t') {
+                    // Get the completed command
                     String completed = AutoCompleter.complete(inputBuffer.toString());
-                    inputBuffer.setLength(0);   // Clear the buffer
-                    inputBuffer.append(completed); // Append only the completed command
-                    System.out.print("\r$ " + completed); // Clear the line completely and print the completed command
+                    
+                    // Clear the current line and reprint with completed command
+                    System.out.print("\r");          // Return to beginning of line
+                    System.out.print("$ ");          // Print prompt
+                    System.out.print(completed);     // Print completed command
+                    
+                    // Update input buffer with completed command
+                    inputBuffer.setLength(0);
+                    inputBuffer.append(completed);
                 } else if (key == 127 || key == 8) { // Handle backspace
                     if (inputBuffer.length() > 0) {
                         inputBuffer.setLength(inputBuffer.length() - 1);
@@ -432,7 +439,6 @@ public class Main {
             return null;
         }
     }
-
 
 
     private static void executeCommand(String command, List<String> args) throws IOException {
