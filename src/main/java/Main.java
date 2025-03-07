@@ -437,18 +437,16 @@ public class Main {
         private static final Trie commandTrie;
         private static List<String> completionOptions = new ArrayList<>();
         private static int completionState = 0;
-
         // Initialize the trie with built-in commands
         static {
             List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
             commandTrie = new Trie(builtInCommands);
         }
-
+        
         public static String complete(String text, int state) {
             if (state == 0) {
                 completionState++;
-                completionOptions = commandTrie.suggest(text);
-                
+                completionOptions = commandTrie.suggest(text);                
                 if (completionOptions.size() > 1) {
                     String commonPrefix = commandTrie.getCommonPrefix(completionOptions);
                     if (!commonPrefix.equals(text)) {
