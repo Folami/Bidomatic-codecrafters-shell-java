@@ -58,7 +58,7 @@ public class Main {
                     System.out.println();
                     return inputBuffer.toString().trim();
                 } else if (key == '\t') {  // Tab key triggers autocompletion
-                    inputPromptTabbed(inputBuffer)
+                    inputPromptTabbed(inputBuffer);
                 } else if (key == 127 || key == 8) {  // Backspace key
                     if (inputBuffer.length() > 0) {
                         inputBuffer.setLength(inputBuffer.length() - 1);
