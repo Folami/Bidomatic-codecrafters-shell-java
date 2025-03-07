@@ -21,25 +21,8 @@ public class Main {
              * Returns: The completed text or null if no completion yet.
              */
             if (state == 0) {  // First Tab press
-                tabPressCount++;  // Increment Tab press counter
-                tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
-                if (tabCompletionOptions.size() == 1) {
-                    return tabCompletionOptions.get(0) + " ";  // Single match, return with space
-                } else if (tabCompletionOptions.size() > 1) {
-                    // Multiple matches, compute longest common prefix
-                    String commonPrefix = computeLongestCommonPrefix(tabCompletionOptions);
-                    if (!commonPrefix.equals(currentText)) {
-                        return commonPrefix + " ";  // Return LCP if it extends input
-                    }
-                    // If LCP is same as input, ring bell on first Tab
-                    if (tabPressCount == 1) {
-                        System.out.write(7);  // ASCII bell
-                        System.out.flush();
-                        return null;
-                    }
-                }
+                return initTabPress(tabPressCount, tabCompletionOptions);
             }
-
             // Handle multiple matches on subsequent Tab presses
             if (tabCompletionOptions.size() > 1 && tabPressCount == 2) {
                 // Print options with two spaces and reprint prompt
@@ -48,13 +31,32 @@ public class Main {
                 tabPressCount = 0;  // Reset after listing
                 return null;
             }
-
             // Cycle through options if available
             if (state < tabCompletionOptions.size()) {
                 return tabCompletionOptions.get(state) + " ";
             }
             tabPressCount = 0;  // Reset if no more options
             return null;
+        }
+
+        private String initTabPress(int tabPressCount, List<String> tabCompletionOptions) {
+            tabPressCount++;  // Increment Tab press counter
+            tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
+            if (tabCompletionOptions.size() == 1) {
+                return tabCompletionOptions.get(0) + " ";  // Single match, return with space
+            } else if (tabCompletionOptions.size() > 1) {
+                // Multiple matches, compute longest common prefix
+                String commonPrefix = computeLongestCommonPrefix(tabCompletionOptions);
+                if (!commonPrefix.equals(currentText)) {
+                    return commonPrefix + " ";  // Return LCP if it extends input
+                }
+                // If LCP is same as input, ring bell on first Tab
+                if (tabPressCount == 1) {
+                    System.out.write(7);  // ASCII bell
+                    System.out.flush();
+                    return null;
+                }
+            }
         }
 
         private static List<String> getCompletionOptions(String text) {
