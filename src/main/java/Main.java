@@ -7,7 +7,6 @@ import java.util.*;
 public class Main {
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
-    // private static List<String> tabCompletionOptions = new ArrayList<>();  // Store completion options
     private static int tabPressCount = 0;  // Track Tab presses
     
     
@@ -437,6 +436,7 @@ public class Main {
         private static List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
         private static List<String> completionOptions = new ArrayList<>();
         private static int completionState = 0;
+
         public static String complete(String text, int state) {
             /*
              * Handles tab completion for built-in commands.
