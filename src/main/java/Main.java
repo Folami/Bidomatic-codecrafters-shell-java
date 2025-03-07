@@ -39,7 +39,7 @@ public class Main {
             return null;
         }
 
-        private String initTabPress(String currentText, int tabPressCount, List<String> tabCompletionOptions) {
+        private static String initTabPress(String currentText, int tabPressCount, List<String> tabCompletionOptions) {
             tabPressCount++;  // Increment Tab press counter
             tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
             if (tabCompletionOptions.size() == 1) {
