@@ -4,6 +4,7 @@ import java.nio.file.*;
 import java.util.*;
 
 
+
 public class Main {
     private static final String shellHome = System.getProperty("user.dir");
     private static final List<String> shBuiltins = List.of("echo", "exit", "type", "pwd", "cd");
@@ -446,22 +447,33 @@ public class Main {
              * Returns: The completed text or null if no completion yet.
              */
             if (state == 0) {
+                // Reset state and get new completion options
                 completionState++;
                 completionOptions = getCompletionOptions(text);
+                // If we have multiple options, try to find common prefix first
                 if (completionOptions.size() > 1) {
                     String commonPrefix = getCommonPrefix(completionOptions);
                     if (!commonPrefix.equals(text)) {
                         return commonPrefix + " ";
                     }
+                    // Handle multiple matches behavior
+                    if (completionState == 1) {
+                        // First tab - ring bell
+                        System.out.print("\u0007");
+                        System.out.flush();
+                        return null;
+                    } else if (completionState == 2) {
+                        // Second tab - show all options
+                        System.out.println("\n" + String.join("  ", completionOptions));
+                        System.out.print("$ " + text);
+                        System.out.flush();
+                        completionState = 0;
+                        return null;
+                    }
                 }
-                if (completionOptions.size() > 1 && completionState == 1) {
-                    System.out.print("\u0007"); // Ring the bell
-                    return null;
-                } else if (completionOptions.size() > 1 && completionState == 2) {
-                    System.out.println("\n" + String.join("  ", completionOptions));
-                    System.out.print("$ " + text);
-                    completionState = 0;
-                    return null;
+                // Single match - return it immediately
+                else if (completionOptions.size() == 1) {
+                    return completionOptions.get(0) + " ";
                 }
             }
             if (state < completionOptions.size()) {
