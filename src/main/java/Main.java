@@ -434,94 +434,118 @@ public class Main {
 
 
     public static class AutoCompleter {
-        private static List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
+        private static final Trie commandTrie;
         private static List<String> completionOptions = new ArrayList<>();
         private static int completionState = 0;
 
+        // Initialize the trie with built-in commands
+        static {
+            List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
+            commandTrie = new Trie(builtInCommands);
+        }
+
         public static String complete(String text, int state) {
-            /*
-             * Handles tab completion for built-in commands.
-             * Args:
-             *   currentText: The text to be completed (e.g., "ech").
-             *   state: The number of Tab presses.
-             * Returns: The completed text or null if no completion yet.
-             */
             if (state == 0) {
-                // Reset state and get new completion options
                 completionState++;
-                completionOptions = getCompletionOptions(text);
-                // If we have multiple options, try to find common prefix first
+                completionOptions = commandTrie.suggest(text);
+                
                 if (completionOptions.size() > 1) {
-                    String commonPrefix = getCommonPrefix(completionOptions);
+                    String commonPrefix = commandTrie.getCommonPrefix(completionOptions);
                     if (!commonPrefix.equals(text)) {
-                        return commonPrefix + " ";
+                        return commonPrefix;
                     }
-                    // Handle multiple matches behavior
                     if (completionState == 1) {
-                        // First tab - ring bell
-                        System.out.print("\u0007");
-                        System.out.flush();
+                        System.out.print("\u0007"); // Ring the bell
                         return null;
                     } else if (completionState == 2) {
-                        // Second tab - show all options
                         System.out.println("\n" + String.join("  ", completionOptions));
                         System.out.print("$ " + text);
-                        System.out.flush();
                         completionState = 0;
                         return null;
                     }
+                } else if (completionOptions.size() == 1) {
+                    return completionOptions.get(0);
                 }
-                // Single match - return it immediately
-                // else if (completionOptions.size() == 1) {
-                //     return completionOptions.get(0) + " ";
-                // }
-            }
-            if (state < completionOptions.size()) {
-                return completionOptions.get(state) + " ";
             }
             completionState = 0;
             return null;
         }
 
-        private static List<String> getCompletionOptions(String text) {
-            /*
-             * Collects built-in command names matching the input text.
-             * Args:
-             *   text: The text to match against (e.g., "ech").
-             * Returns: List of matching command names.
-             */
-            List<String> options = new ArrayList<>();
-            for (String cmd : builtInCommands) {
-                if (cmd.startsWith(text)) {
-                    options.add(cmd);
+        private static class Trie {
+            private final TrieNode root;
+
+            public Trie(List<String> words) {
+                root = new TrieNode();
+                for (String word : words) {
+                    root.insert(word);
                 }
             }
-            // Add logic to include external executables if needed
-            return options;
-        }
 
-        private static String getCommonPrefix(List<String> options) {
-            /*
-             * Computes the longest common prefix of a list of strings.
-             * Args:
-             *   options: List of strings to compare.
-             * Returns: Longest common prefix.
-             */
-            if (options.isEmpty()) {
-                return "";
+            public List<String> suggest(String prefix) {
+                List<String> suggestions = new ArrayList<>();
+                TrieNode lastNode = root;
+                
+                // Traverse to the last node of prefix
+                for (char c : prefix.toCharArray()) {
+                    TrieNode child = lastNode.children.get(c);
+                    if (child == null) {
+                        return suggestions;
+                    }
+                    lastNode = child;
+                }
+                
+                // Collect all words starting from last node
+                suggestHelper(lastNode, suggestions, new StringBuilder(prefix));
+                return suggestions;
             }
-            String prefix = options.get(0);
-            for (String option : options) {
-                while (!option.startsWith(prefix)) {
-                    prefix = prefix.substring(0, prefix.length() - 1);
-                    if (prefix.isEmpty()) {
-                        return "";
+
+            private void suggestHelper(TrieNode node, List<String> suggestions, StringBuilder current) {
+                if (node.isWord) {
+                    suggestions.add(current.toString());
+                }
+
+                for (Map.Entry<Character, TrieNode> entry : node.children.entrySet()) {
+                    current.append(entry.getKey());
+                    suggestHelper(entry.getValue(), suggestions, current);
+                    current.setLength(current.length() - 1);
+                }
+            }
+
+            public String getCommonPrefix(List<String> words) {
+                if (words.isEmpty()) return "";
+                String first = words.get(0);
+                for (int i = 0; i < first.length(); i++) {
+                    char c = first.charAt(i);
+                    for (int j = 1; j < words.size(); j++) {
+                        if (i >= words.get(j).length() || words.get(j).charAt(i) != c) {
+                            return first.substring(0, i);
+                        }
                     }
                 }
+                return first;
             }
-            return prefix;
+
+            private static class TrieNode {
+                Map<Character, TrieNode> children;
+                boolean isWord;
+
+                public TrieNode() {
+                    children = new HashMap<>();
+                    isWord = false;
+                }
+
+                public void insert(String word) {
+                    TrieNode current = this;
+                    for (char c : word.toCharArray()) {
+                        current.children.putIfAbsent(c, new TrieNode());
+                        current = current.children.get(c);
+                    }
+                    current.isWord = true;
+                }
+            }
         }
     }
+
     
     public static class Shlex {
         public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
@@ -854,3 +878,5 @@ public class Main {
         }
     }
 }
+
+
