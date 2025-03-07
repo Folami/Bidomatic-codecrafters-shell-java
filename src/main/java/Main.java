@@ -436,8 +436,10 @@ public class Main {
     private static int tabPressCount = 0;  // Track Tab presses
 
     public static class AutoCompleter {
-        private static final List<String> builtins = List.of("echo", "exit", "type", "pwd", "cd");
-        public static String complete(String currentText, int state) {
+        private List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
+        private List<String> completionOptions = new ArrayList<>();
+        private int completionState = 0;
+        public static String complete(String text, int state) {
             /*
              * Handles tab completion for built-in commands.
              * Args:
@@ -445,43 +447,29 @@ public class Main {
              *   state: The number of Tab presses.
              * Returns: The completed text or null if no completion yet.
              */
-            if (state == 0) {  // First Tab press
-                return initTabPress(currentText, tabPressCount, tabCompletionOptions);
-            }
-            // Handle multiple matches on subsequent Tab presses
-            if (tabCompletionOptions.size() > 1 && tabPressCount == 2) {
-                // Print options with two spaces and reprint prompt
-                System.out.println("\n" + String.join("  ", tabCompletionOptions));
-                System.out.print("$ " + currentText);
-                tabPressCount = 0;  // Reset after listing
-                return null;
-            }
-            // Cycle through options if available
-            if (state < tabCompletionOptions.size()) {
-                return tabCompletionOptions.get(state) + " ";
-            }
-            tabPressCount = 0;  // Reset if no more options
-            return null;
-        }
-
-        private static String initTabPress(String currentText, int tabPressCount, List<String> tabCompletionOptions) {
-            tabPressCount++;  // Increment Tab press counter
-            tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
-            if (tabCompletionOptions.size() == 1) {
-                return tabCompletionOptions.get(0) + " ";  // Single match, return with space
-            } else if (tabCompletionOptions.size() > 1) {
-                // Multiple matches, compute longest common prefix
-                String commonPrefix = computeLongestCommonPrefix(tabCompletionOptions);
-                if (!commonPrefix.equals(currentText)) {
-                    return commonPrefix + " ";  // Return LCP if it extends input
+            if (state == 0) {
+                completionState++;
+                completionOptions = getCompletionOptions(text);
+                if (completionOptions.size() > 1) {
+                    String commonPrefix = getCommonPrefix(completionOptions);
+                    if (!commonPrefix.equals(text)) {
+                        return commonPrefix + " ";
+                    }
                 }
-                // If LCP is same as input, ring bell on first Tab
-                if (tabPressCount == 1) {
-                    System.out.write(7);  // ASCII bell
-                    System.out.flush();
+                if (completionOptions.size() > 1 && completionState == 1) {
+                    System.out.print("\u0007"); // Ring the bell
+                    return null;
+                } else if (completionOptions.size() > 1 && completionState == 2) {
+                    System.out.println("\n" + String.join("  ", completionOptions));
+                    System.out.print("$ " + text);
+                    completionState = 0;
                     return null;
                 }
             }
+            if (state < completionOptions.size()) {
+                return completionOptions.get(state) + " ";
+            }
+            completionState = 0;
             return null;
         }
 
@@ -492,17 +480,17 @@ public class Main {
              *   text: The text to match against (e.g., "ech").
              * Returns: List of matching command names.
              */
-            List<String> builtinMatches = new ArrayList<>();
-            // Filter built-ins that start with the input text
-            for (String cmd : builtins) {
+            List<String> options = new ArrayList<>();
+            for (String cmd : builtInCommands) {
                 if (cmd.startsWith(text)) {
-                    builtinMatches.add(cmd);
+                    options.add(cmd);
                 }
             }
-            return builtinMatches;
+            // Add logic to include external executables if needed
+            return options;
         }
 
-        private static String computeLongestCommonPrefix(List<String> options) {
+        private String getCommonPrefix(List<String> options) {
             /*
              * Computes the longest common prefix of a list of strings.
              * Args:
@@ -512,19 +500,16 @@ public class Main {
             if (options.isEmpty()) {
                 return "";
             }
-            if (options.size() == 1) {
-                return options.get(0);
+            String prefix = options.get(0);
+            for (String option : options) {
+                while (!option.startsWith(prefix)) {
+                    prefix = prefix.substring(0, prefix.length() - 1);
+                    if (prefix.isEmpty()) {
+                        return "";
+                    }
+                }
             }
-            // Sort to compare first and last for efficiency
-            List<String> sortedOptions = new ArrayList<>(options);
-            sortedOptions.sort(String::compareTo);
-            String first = sortedOptions.get(0);
-            String last = sortedOptions.get(sortedOptions.size() - 1);
-            int i = 0;
-            while (i < first.length() && i < last.length() && first.charAt(i) == last.charAt(i)) {
-                i++;
-            }
-            return first.substring(0, i);
+            return prefix;
         }
     }
     
@@ -860,3 +845,68 @@ public class Main {
     }
 }
 
+
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class AutoCompleter {
+    private List<String> builtInCommands = Arrays.asList("echo", "exit", "type", "pwd", "cd");
+    private List<String> completionOptions = new ArrayList<>();
+    private int completionState = 0;
+
+    public String complete(String text, int state) {
+        if (state == 0) {
+            completionState++;
+            completionOptions = getCompletionOptions(text);
+            if (completionOptions.size() > 1) {
+                String commonPrefix = getCommonPrefix(completionOptions);
+                if (!commonPrefix.equals(text)) {
+                    return commonPrefix + " ";
+                }
+            }
+            if (completionOptions.size() > 1 && completionState == 1) {
+                System.out.print("\u0007"); // Ring the bell
+                return null;
+            } else if (completionOptions.size() > 1 && completionState == 2) {
+                System.out.println("\n" + String.join("  ", completionOptions));
+                System.out.print("$ " + text);
+                completionState = 0;
+                return null;
+            }
+        }
+        if (state < completionOptions.size()) {
+            return completionOptions.get(state) + " ";
+        }
+        completionState = 0;
+        return null;
+    }
+
+    private List<String> getCompletionOptions(String text) {
+        List<String> options = new ArrayList<>();
+        for (String cmd : builtInCommands) {
+            if (cmd.startsWith(text)) {
+                options.add(cmd);
+            }
+        }
+        // Add logic to include external executables if needed
+        return options;
+    }
+
+    private String getCommonPrefix(List<String> options) {
+        if (options.isEmpty()) {
+            return "";
+        }
+        String prefix = options.get(0);
+        for (String option : options) {
+            while (!option.startsWith(prefix)) {
+                prefix = prefix.substring(0, prefix.length() - 1);
+                if (prefix.isEmpty()) {
+                    return "";
+                }
+            }
+        }
+        return prefix;
+    }
+}
