@@ -490,7 +490,7 @@ public class Main {
             return options;
         }
 
-        private String getCommonPrefix(List<String> options) {
+        private static String getCommonPrefix(List<String> options) {
             /*
              * Computes the longest common prefix of a list of strings.
              * Args:
