@@ -21,7 +21,7 @@ public class Main {
              * Returns: The completed text or null if no completion yet.
              */
             if (state == 0) {  // First Tab press
-                return initTabPress(tabPressCount, tabCompletionOptions);
+                return initTabPress(currentText, tabPressCount, tabCompletionOptions);
             }
             // Handle multiple matches on subsequent Tab presses
             if (tabCompletionOptions.size() > 1 && tabPressCount == 2) {
@@ -39,7 +39,7 @@ public class Main {
             return null;
         }
 
-        private String initTabPress(int tabPressCount, List<String> tabCompletionOptions) {
+        private String initTabPress(String currentText, int tabPressCount, List<String> tabCompletionOptions) {
             tabPressCount++;  // Increment Tab press counter
             tabCompletionOptions = getCompletionOptions(currentText);  // Gather matching options
             if (tabCompletionOptions.size() == 1) {
