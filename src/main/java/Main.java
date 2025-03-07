@@ -472,9 +472,9 @@ public class Main {
                     }
                 }
                 // Single match - return it immediately
-                else if (completionOptions.size() == 1) {
-                    return completionOptions.get(0) + " ";
-                }
+                // else if (completionOptions.size() == 1) {
+                //     return completionOptions.get(0) + " ";
+                // }
             }
             if (state < completionOptions.size()) {
                 return completionOptions.get(state) + " ";
