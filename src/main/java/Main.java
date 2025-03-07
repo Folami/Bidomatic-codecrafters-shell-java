@@ -57,6 +57,7 @@ public class Main {
                     return null;
                 }
             }
+            return null;
         }
 
         private static List<String> getCompletionOptions(String text) {
