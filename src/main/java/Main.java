@@ -20,11 +20,9 @@ public class Main {
                 if (tokens == null || tokens.isEmpty()) {
                     continue;
                 }
-
                 String command = tokens.get(0);
                 List<String> commandArgs = tokens.subList(1, tokens.size());
                 executeCommand(command, commandArgs);
-
             } catch (IllegalArgumentException e) {
                 System.out.println("Error parsing command: " + e.getMessage());
             } catch (IOException e) {
