@@ -65,8 +65,8 @@ public class Main {
                         System.out.print("\b \b");  // Erase last character
                     }
                 } else {
-                    inputBuffer.append((char) key);  // Append character to buffer
-                    System.out.print((char) key);  // Display character
+                    inputBuffer.append((char)key);  // Append character to buffer
+                    System.out.print((char)key);  // Display character
                 }
             }
         } catch (IOException e) {
