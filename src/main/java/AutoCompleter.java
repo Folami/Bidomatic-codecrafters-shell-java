@@ -26,7 +26,7 @@ public class AutoCompleter {
                 if (completionState == 1) {
                     // Ring the bell.
                     System.out.print("\007");
-                    return "";    
+                    return null;   
                 } else if (completionState == 2) {
                     System.out.println("\n" + completionOptions);
                     System.out.print("$ " + text);
@@ -38,7 +38,7 @@ public class AutoCompleter {
         if (tabCount < completionOptions.size()) {
             return completionOptions.get(tabCount++);
         }
-        tabCount = 0;
+        completionState = 0;
         return null;
     }
     
