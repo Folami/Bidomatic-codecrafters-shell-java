@@ -34,10 +34,6 @@ public class Main {
     }
 
     private static String inputPrompt() {
-        /*
-         * Prompts for and returns user input, handling Tab for autocompletion.
-         * Returns: The user input string or null on error/EOF.
-         */
         Console console = System.console();
         if (console == null) {
             // Fallback for non-interactive terminals
@@ -49,50 +45,9 @@ public class Main {
                 return null;
             }
         }
-        System.out.print("$ ");
-        StringBuilder inputBuffer = new StringBuilder();
-        try {
-            while (true) {
-                int key = System.in.read();  // Read a single character
-                if (key == '\n') {  // Enter key submits input
-                    System.out.println();
-                    return inputBuffer.toString().trim();
-                } else if (key == '\t') {  // Tab key triggers autocompletion
-                    inputPromptTabbed(inputBuffer);
-                } else if (key == 127 || key == 8) {  // Backspace key
-                    if (inputBuffer.length() > 0) {
-                        inputBuffer.setLength(inputBuffer.length() - 1);
-                        System.out.print("\b \b");  // Erase last character
-                    }
-                } else {
-                    inputBuffer.append((char)key);  // Append character to buffer
-                    System.out.print((char)key);  // Display character
-                }
-            }
-        } catch (IOException e) {
-            return null;  // Return null on I/O error
-        }
+        String line = console.readLine("$ ");
+        return line;
     }
-
-    private static void inputPromptTabbed(StringBuilder inputBuffer) {
-        String currentText = inputBuffer.toString().trim();
-        String completed = AutoCompleter.complete(currentText, tabPressCount);
-        if (completed != null) {
-            // Clear current line and display completed text
-            System.out.print("\r$ ");  // Return to start of line
-            System.out.print(completed);  // Print completed command
-            // Clear any remaining characters from previous input
-            int extraLength = Math.max(0, inputBuffer.length() - completed.length());
-            for (int i = 0; i < extraLength; i++) {
-                System.out.print(" ");
-            }
-            System.out.print("\r$ " + completed);  // Move cursor back
-            inputBuffer.setLength(0);
-            inputBuffer.append(completed.trim());  // Update buffer
-        }
-        System.out.flush();
-    }
-
 
     private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
