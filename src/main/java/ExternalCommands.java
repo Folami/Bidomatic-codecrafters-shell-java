@@ -3,8 +3,8 @@ import java.nio.file.*;
 import java.util.*;
 
 public class ExternalCommands {
-    
-    private static String findExecutable(String command) {
+
+    protected static String findExecutable(String command) {
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
             String[] paths = pathEnv.split(File.pathSeparator);
@@ -24,7 +24,7 @@ public class ExternalCommands {
         return null;
     }
 
-    private static void runExternalCommand(String command, List<String> args) throws IOException {
+    protected static void runExternalCommand(String command, List<String> args) throws IOException {
         if (findExecutable(command) == null) {
             System.err.println(command + ": command not found");
             return;
