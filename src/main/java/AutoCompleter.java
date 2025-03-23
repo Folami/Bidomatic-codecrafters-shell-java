@@ -29,7 +29,7 @@ public class AutoCompleter {
                     // Ring the bell.
                     System.out.print("\007");
                     return "";    
-                } elseif (completionState == 2) {
+                } else if (completionState == 2) {
                     System.out.println("\n" + completionOptions);
                     System.out.print("$ " + text);
                     completionState = 0;
