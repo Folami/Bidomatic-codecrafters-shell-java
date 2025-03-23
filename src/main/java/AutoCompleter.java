@@ -4,9 +4,7 @@ public class AutoCompleter {
     // Builtin commands to autocomplete.
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
     private static int completionState = 0;
-    // Cache for the current completion options and state.
     private static List<String> completionOptions = new ArrayList<>();
-    // private static String lastPrefix = "";
     private static int tabCount = 0;
     
     // Setup function which could be expanded as needed.
