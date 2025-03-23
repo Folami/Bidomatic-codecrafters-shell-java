@@ -7,40 +7,37 @@ public class AutoCompleter {
     private static List<String> currentCompletions = new ArrayList<>();
 
     public static String complete(String text, int tabCount) {
-        // Reset completion state if prefix changed
+        // Reset state if prefix has changed.
         if (!text.equals(lastPrefix)) {
             lastTabCount = 0;
             currentCompletions.clear();
         }
-        
         lastPrefix = text;
         lastTabCount = tabCount;
 
-        // Get completion options if this is first tab press or prefix changed
+        // If completions not computed yet, get them.
         if (currentCompletions.isEmpty()) {
             currentCompletions = getCompletionOptions(text);
         }
-
         if (currentCompletions.isEmpty()) {
             return text;
         }
-
-        // Cycle through completions
         int index = (lastTabCount - 1) % currentCompletions.size();
-        return currentCompletions.get(index);
+        String result = currentCompletions.get(index);
+        // If the completion exactly matches a builtin, add a trailing space.
+        if (BUILTINS.contains(result)) {
+            result = result + " ";
+        }
+        return result;
     }
 
     private static List<String> getCompletionOptions(String prefix) {
         List<String> matches = new ArrayList<>();
-        
-        // Complete builtin commands
         for (String builtin : BUILTINS) {
             if (builtin.startsWith(prefix.trim())) {
                 matches.add(builtin);
             }
         }
-
-        // Sort matches for consistent ordering
         Collections.sort(matches);
         return matches;
     }
