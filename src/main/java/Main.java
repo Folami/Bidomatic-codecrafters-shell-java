@@ -36,22 +36,6 @@ public class Main {
     private static String inputPrompt() {
         Console console = System.console();
         if (console == null) {
-            // Fallback for non-interactive terminals
-            System.out.print("$ ");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            try {
-                return reader.readLine();
-            } catch (IOException e) {
-                return null;
-            }
-        }
-        String line = console.readLine("$ ");
-        return line;
-    }
-
-    private static String inputPrompt() {
-        Console console = System.console();
-        if (console == null) {
             System.out.print("$ ");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             try {
