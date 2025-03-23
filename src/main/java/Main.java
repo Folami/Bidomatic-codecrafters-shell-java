@@ -49,6 +49,43 @@ public class Main {
         return line;
     }
 
+    private static String inputPrompt() {
+        Console console = System.console();
+        if (console == null) {
+            System.out.print("$ ");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                String input = reader.readLine();
+                if (input == null) {
+                    return null;
+                }
+                // Handle tab completion
+                if (input.contains("\t")) {
+                    tabPressCount++;
+                    String textBeforeTab = input.substring(0, input.indexOf('\t'));
+                    return AutoCompleter.complete(textBeforeTab, tabPressCount);
+                }
+                tabPressCount = 0;
+                return input;
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        String input = console.readLine("$ ");
+        if (input == null) {
+            return null;
+        }
+        // Handle tab completion
+        if (input.contains("\t")) {
+            tabPressCount++;
+            String textBeforeTab = input.substring(0, input.indexOf('\t'));
+            return AutoCompleter.complete(textBeforeTab, tabPressCount);
+        }
+        tabPressCount = 0;
+        return input;
+    }
+
     private static void executeCommand(String command, List<String> args) throws IOException {
         switch (command) {
             case "exit":
