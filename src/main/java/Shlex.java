@@ -1,33 +1,35 @@
+import java.io.*;
+import java.util.*;
 
 public static class Shlex {
     public static List<String> split(String s, boolean comments, boolean posix) throws IOException {
-            if (s == null) {
-                throw new IllegalArgumentException("s argument must not be null");
-            }
-            Shlex lex = new Shlex(s, null, posix, null);
-            lex.whitespaceSplit = true;
-            if (!comments) {
-                lex.commenters = "";
-            }
-            return lex.split();
+        if (s == null) {
+            throw new IllegalArgumentException("s argument must not be null");
         }
+        Shlex lex = new Shlex(s, null, posix, null);
+        lex.whitespaceSplit = true;
+        if (!comments) {
+            lex.commenters = "";
+        }
+        return lex.split();
+    }
 
-        private StringReader instream;
-        private String infile;
-        private boolean posix;
-        private String eof;
-        private String commenters = "#";
-        private String wordchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-        private String whitespace = " \t\r\n";
-        private boolean whitespaceSplit = false;
-        private String quotes = "'\"";
-        private String escape = "\\";
-        private String escapedquotes = "\"";
-        private String state = " ";
-        private Deque<String> pushback = new LinkedList<>();
-        private int lineno = 1;
-        private int debug = 0;
-        private String token = "";
+    private StringReader instream;
+    private String infile;
+    private boolean posix;
+    private String eof;
+    private String commenters = "#";
+    private String wordchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+    private String whitespace = " \t\r\n";
+    private boolean whitespaceSplit = false;
+    private String quotes = "'\"";
+    private String escape = "\\";
+    private String escapedquotes = "\"";
+    private String state = " ";
+    private Deque<String> pushback = new LinkedList<>();
+    private int lineno = 1;
+    private int debug = 0;
+    private String token = "";
         private Deque<Object[]> filestack = new LinkedList<>();
         private String source = null;
         private String punctuationChars = "";
