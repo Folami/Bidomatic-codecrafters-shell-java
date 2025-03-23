@@ -1,6 +1,4 @@
 import java.util.*;
-import java.nio.file.*;
-import java.io.File;
 
 public class AutoCompleter {
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
@@ -14,15 +12,19 @@ public class AutoCompleter {
             lastTabCount = 0;
             currentCompletions.clear();
         }
+        
         lastPrefix = text;
         lastTabCount = tabCount;
+
         // Get completion options if this is first tab press or prefix changed
         if (currentCompletions.isEmpty()) {
             currentCompletions = getCompletionOptions(text);
         }
+
         if (currentCompletions.isEmpty()) {
             return text;
         }
+
         // Cycle through completions
         int index = (lastTabCount - 1) % currentCompletions.size();
         return currentCompletions.get(index);
@@ -30,12 +32,14 @@ public class AutoCompleter {
 
     private static List<String> getCompletionOptions(String prefix) {
         List<String> matches = new ArrayList<>();
+        
         // Complete builtin commands
         for (String builtin : BUILTINS) {
             if (builtin.startsWith(prefix.trim())) {
                 matches.add(builtin);
             }
         }
+
         // Sort matches for consistent ordering
         Collections.sort(matches);
         return matches;

@@ -35,8 +35,8 @@ public class Main {
 
     private static String inputPrompt() {
         Console console = System.console();
-        System.out.print("$ "); // Changed from ">...." to "$ "
         if (console == null) {
+            System.out.print("$ ");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             try {
                 String input = reader.readLine();
@@ -47,7 +47,9 @@ public class Main {
                 if (input.contains("\t")) {
                     tabPressCount++;
                     String textBeforeTab = input.substring(0, input.indexOf('\t'));
-                    return AutoCompleter.complete(textBeforeTab, tabPressCount);
+                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
+                    System.out.print("\r$ " + completedText);
+                    return completedText;
                 }
                 tabPressCount = 0;
                 return input;
@@ -55,18 +57,26 @@ public class Main {
                 return null;
             }
         } else {
-            String input = console.readLine("$ "); // Changed from ">...." to "$ "
-            if (input == null) {
-                return null;
+            StringBuilder input = new StringBuilder();
+            while (true) {
+                String line = console.readLine("$ " + input.toString());
+                if (line == null) {
+                    return null;
+                }
+                // Handle tab completion
+                if (line.contains("\t")) {
+                    tabPressCount++;
+                    String textBeforeTab = line.substring(0, line.indexOf('\t'));
+                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
+                    input.append(completedText);
+                    System.out.print("\r$ " + input.toString());
+                } else {
+                    tabPressCount = 0;
+                    input.append(line);
+                    break;
+                }
             }
-            // Handle tab completion
-            if (input.contains("\t")) {
-                tabPressCount++;
-                String textBeforeTab = input.substring(0, input.indexOf('\t'));
-                return AutoCompleter.complete(textBeforeTab, tabPressCount);
-            }
-            tabPressCount = 0;
-            return input;
+            return input.toString();
         }
     }
 
