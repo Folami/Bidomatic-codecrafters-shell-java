@@ -3,10 +3,10 @@ import java.util.*;
 public class AutoCompleter {
     // Builtin commands to autocomplete.
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
-    
+    private static int completionState = 0;
     // Cache for the current completion options and state.
     private static List<String> completionOptions = new ArrayList<>();
-    private static String lastPrefix = "";
+    // private static String lastPrefix = "";
     private static int tabCount = 0;
     
     // Setup function which could be expanded as needed.
@@ -17,26 +17,31 @@ public class AutoCompleter {
     
     // Called when the user presses the <TAB> key. This function simulates the complete() function in main.py.
     public static String complete(String text, int currentTabCount) {
-        // If the prefix has changed, reset the cached options.
-        if (!text.equals(lastPrefix)) {
-            lastPrefix = text;
-            tabCount = 0;
+        if (tabCount == 0) {
+            completionState += 1;
             completionOptions = _getCompletionOptions(text);
+            if (completionOptions.size() > 1) {
+                String commonPrefix = _getCommonPrefix(completionOptions);
+                if (commonPrefix != text) {
+                    return commonPrefix + " ";
+                }
+                if (completionState == 1) {
+                    // Ring the bell.
+                    System.out.print("\007");
+                    return "";    
+                } elseif (completionState == 2) {
+                    System.out.println("\n" + completionOptions);
+                    System.out.print("$ " + text);
+                    completionState = 0;
+                    return null;
+                }
+            }
         }
-        // Update our tab press count.
-        tabCount = currentTabCount;
-        
-        if (completionOptions.isEmpty()) {
-            return text;
+        if (tabCount < completionOptions.size()) {
+            return completionOptions.get(tabCount++);
         }
-        // Cycle through the available completions.
-        int index = (tabCount - 1) % completionOptions.size();
-        String completion = completionOptions.get(index);
-        // If the completion exactly matches a builtin, append a trailing space.
-        if (BUILTINS.contains(completion)) {
-            return completion + " ";
-        }
-        return completion;
+        tabCount = 0;
+        return null;
     }
     
     // Simulates _get_completion_options() in main.py: returns a list of builtin commands that start with the given prefix.
@@ -49,5 +54,22 @@ public class AutoCompleter {
         }
         Collections.sort(options);
         return options;
+    }
+
+    // Simulates _get_common_prefix() in main.py: returns the common prefix of a list of strings.
+    private static String _getCommonPrefix(List<String> strings) {
+        if (strings.isEmpty()) {
+            return "";
+        }
+        String first = strings.get(0);
+        for (int i = 1; i < strings.size(); i++) {
+            String other = strings.get(i);
+            int j = 0;
+            while (j < first.length() && j < other.length() && first.charAt(j) == other.charAt(j)) {
+                j++;
+            }
+            first = first.substring(0, j);
+        }
+        return first;
     }
 }
