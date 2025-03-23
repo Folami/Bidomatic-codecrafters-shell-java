@@ -36,7 +36,7 @@ public class Main {
     private static String inputPrompt() {
         Console console = System.console();
         if (console == null) {
-            System.out.print("$ ");
+            System.out.print("$ "); // Changed from ">...." to "$ "
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             try {
                 String input = reader.readLine();
@@ -55,7 +55,7 @@ public class Main {
                 return null;
             }
         } else {
-            String input = console.readLine("$ ");
+            String input = console.readLine("$ "); // Changed from ">...." to "$ "
             if (input == null) {
                 return null;
             }
