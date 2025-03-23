@@ -31,7 +31,7 @@ public class Main {
         }
     }
 
-    private static String inputPrompt() {
+    protected static String inputPrompt() {
         System.out.print("$ ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
@@ -55,7 +55,7 @@ public class Main {
         }
     }
 
-    private static void executeCommand(String command, List<String> args) throws IOException {
+    protected static void executeCommand(String command, List<String> args) throws IOException {
         if (BuiltinCommands.isBuiltin(command)) {
             BuiltinCommands.execute(command, args);
         } else {
