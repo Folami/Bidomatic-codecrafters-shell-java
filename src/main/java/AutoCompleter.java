@@ -1,4 +1,6 @@
-public static class AutoCompleter {
+import java.util.*;
+
+public class AutoCompleter {
     private static final Trie commandTrie;
     private static List<String> completionOptions = new ArrayList<>();
     private static int completionState = 0;
