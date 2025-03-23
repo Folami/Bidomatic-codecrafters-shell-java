@@ -59,7 +59,7 @@ public class Main {
         if (BuiltinCommands.isBuiltin(command)) {
             BuiltinCommands.execute(command, args);
         } else {
-            ExternalCommands.execute(command, args);
+            ExternalCommands.runExternalCommand(command, args);
         }
     }
 }
