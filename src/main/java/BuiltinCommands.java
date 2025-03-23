@@ -9,7 +9,7 @@ public class BuiltinCommands {
         return BUILTINS.contains(command);
     }
 
-    public static void execute(String command, List<String> args) throws IOException {
+    protected static void execute(String command, List<String> args) throws IOException {
         switch (command) {
             case "exit":
                 exitShell();
