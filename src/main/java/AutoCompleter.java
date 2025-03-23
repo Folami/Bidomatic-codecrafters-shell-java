@@ -1,44 +1,53 @@
 import java.util.*;
 
 public class AutoCompleter {
+    // Builtin commands to autocomplete.
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
-    private static int lastTabCount = 0;
+    
+    // Cache for the current completion options and state.
+    private static List<String> completionOptions = new ArrayList<>();
     private static String lastPrefix = "";
-    private static List<String> currentCompletions = new ArrayList<>();
-
-    protected static String complete(String text, int tabCount) {
-        // Reset state if prefix has changed.
+    private static int tabCount = 0;
+    
+    // Setup function which could be expanded as needed.
+    public static void setupAutocomplete() {
+        // In our simple case, the builtins are hard-coded.
+        // More initialization logic could go here.
+    }
+    
+    // Called when the user presses the <TAB> key. This function simulates the complete() function in main.py.
+    public static String complete(String text, int currentTabCount) {
+        // If the prefix has changed, reset the cached options.
         if (!text.equals(lastPrefix)) {
-            lastTabCount = 0;
-            currentCompletions.clear();
+            lastPrefix = text;
+            tabCount = 0;
+            completionOptions = _getCompletionOptions(text);
         }
-        lastPrefix = text;
-        lastTabCount = tabCount;
-
-        // If completions not computed yet, get them.
-        if (currentCompletions.isEmpty()) {
-            currentCompletions = getCompletionOptions(text);
-        }
-        if (currentCompletions.isEmpty()) {
+        // Update our tab press count.
+        tabCount = currentTabCount;
+        
+        if (completionOptions.isEmpty()) {
             return text;
         }
-        int index = (lastTabCount - 1) % currentCompletions.size();
-        String result = currentCompletions.get(index);
-        // If the completion exactly matches a builtin, add a trailing space.
-        if (BUILTINS.contains(result)) {
-            result = result + " ";
+        // Cycle through the available completions.
+        int index = (tabCount - 1) % completionOptions.size();
+        String completion = completionOptions.get(index);
+        // If the completion exactly matches a builtin, append a trailing space.
+        if (BUILTINS.contains(completion)) {
+            return completion + " ";
         }
-        return result;
+        return completion;
     }
-
-    protected static List<String> getCompletionOptions(String prefix) {
-        List<String> matches = new ArrayList<>();
+    
+    // Simulates _get_completion_options() in main.py: returns a list of builtin commands that start with the given prefix.
+    private static List<String> _getCompletionOptions(String prefix) {
+        List<String> options = new ArrayList<>();
         for (String builtin : BUILTINS) {
             if (builtin.startsWith(prefix.trim())) {
-                matches.add(builtin);
+                options.add(builtin);
             }
         }
-        Collections.sort(matches);
-        return matches;
+        Collections.sort(options);
+        return options;
     }
 }
