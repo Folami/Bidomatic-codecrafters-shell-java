@@ -6,7 +6,7 @@ public class AutoCompleter {
     private static String lastPrefix = "";
     private static List<String> currentCompletions = new ArrayList<>();
 
-    public static String complete(String text, int tabCount) {
+    protected static String complete(String text, int tabCount) {
         // Reset state if prefix has changed.
         if (!text.equals(lastPrefix)) {
             lastTabCount = 0;
@@ -31,7 +31,7 @@ public class AutoCompleter {
         return result;
     }
 
-    private static List<String> getCompletionOptions(String prefix) {
+    protected static List<String> getCompletionOptions(String prefix) {
         List<String> matches = new ArrayList<>();
         for (String builtin : BUILTINS) {
             if (builtin.startsWith(prefix.trim())) {
