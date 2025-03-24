@@ -39,7 +39,7 @@ public class Main {
         try {
             while (true) {
                 int charCode = reader.read();
-                if (charCode == -1) { // End of stream
+                if (charCode == -1) {
                     return null;
                 }
                 char inputChar = (char) charCode;
@@ -48,12 +48,10 @@ public class Main {
                     tabPressCount++;
                     String textBeforeTab = currentInput.toString();
                     String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
-                    // Debug: Verify completedText
-                    System.err.println("DEBUG: completedText = '" + completedText + "'");
 
-                    // Clear and rewrite
-                    System.out.print("\r$ " + completedText);
-                    System.out.print("\033[K");
+                    // Overwrite with spaces then rewrite
+                    System.out.print("\r$" + " ".repeat(20)); // Overwrite with spaces
+                    System.out.print("\r$ " + completedText); // Rewrite prompt
                     System.out.flush();
 
                     currentInput.setLength(0);
@@ -64,10 +62,11 @@ public class Main {
                     String finalInput = currentInput.toString();
                     System.out.println();
                     return finalInput;
-                } else if (inputChar == 8) { // Backspace
+                } else if (inputChar == 8) {
                     if (currentInput.length() > 0) {
                         currentInput.deleteCharAt(currentInput.length() - 1);
-                        System.out.print("\r$ " + currentInput.toString() + " \033[K");
+                        System.out.print("\r$" + " ".repeat(20));
+                        System.out.print("\r$ " + currentInput.toString());
                         System.out.flush();
                     }
                 } else {
