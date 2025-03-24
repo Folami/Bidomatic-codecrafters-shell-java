@@ -35,27 +35,24 @@ public class Main {
         System.out.print("$ ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            StringBuilder input = new StringBuilder();
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    return null;
-                }
-                // Handle tab completion
-                if (line.contains("\t")) {
-                    tabPressCount++;
-                    String textBeforeTab = line.substring(0, line.indexOf('\t'));
-                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
-                    // Overwrite the current line with the prompt and completed text.
-                    System.out.print("\r$ " + completedText);
-                    input.append(completedText);
-                } else {
-                    tabPressCount = 0;
-                    input.append(line);
-                    break;
-                }
+            String line = reader.readLine();
+            if (line == null) {
+                return null;
             }
-            return input.toString();
+            // Handle tab completion
+            if (line.contains("\t")) {
+                tabPressCount++;
+                String textBeforeTab = line.substring(0, line.indexOf('\t'));
+                String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);  
+                // Clear the current line and print the new one
+                System.out.print("\r");              // Move to start of line
+                System.out.print("\033[K");          // Clear line
+                System.out.print("$ " + completedText);
+                System.out.flush();                  // Ensure output is displayed
+                return completedText;
+            }
+            tabPressCount = 0;
+            return line;
         } catch (IOException e) {
             return null;
         }
@@ -69,4 +66,3 @@ public class Main {
         }
     }
 }
-
