@@ -5,7 +5,6 @@ public class AutoCompleter {
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
     private static int completionState = 0;
     private static List<String> completionOptions = new ArrayList<>();
-    private static int tabCount = 0;
     
     // Setup function which could be expanded as needed.
     public static void setupAutocomplete() {
@@ -15,11 +14,11 @@ public class AutoCompleter {
     
     // Called when the user presses the <TAB> key. This function simulates the complete() function in main.py.
     public static String complete(String text, int currentTabCount) {
-        if (tabCount == 0) {
+        if (currentTabCount == 0) {
             completionState += 1;
-            completionOptions = _getCompletionOptions(text);
+            completionOptions = getCompletionOptions(text);
             if (completionOptions.size() > 1) {
-                String commonPrefix = _getCommonPrefix(completionOptions);
+                String commonPrefix = getCommonPrefix(completionOptions);
                 if (commonPrefix != text) {
                     return commonPrefix + " ";
                 }
@@ -35,7 +34,7 @@ public class AutoCompleter {
                 }
             }
         }
-        if (tabCount < completionOptions.size()) {
+        if (currentTabCount < completionOptions.size()) {
             return completionOptions.get(tabCount++);
         }
         completionState = 0;
@@ -43,7 +42,7 @@ public class AutoCompleter {
     }
     
     // Simulates _get_completion_options() in main.py: returns a list of builtin commands that start with the given prefix.
-    private static List<String> _getCompletionOptions(String prefix) {
+    private static List<String> getCompletionOptions(String prefix) {
         List<String> options = new ArrayList<>();
         for (String builtin : BUILTINS) {
             if (builtin.startsWith(prefix.trim())) {
@@ -55,7 +54,7 @@ public class AutoCompleter {
     }
 
     // Simulates _get_common_prefix() in main.py: returns the common prefix of a list of strings.
-    private static String _getCommonPrefix(List<String> strings) {
+    private static String getCommonPrefix(List<String> strings) {
         if (strings.isEmpty()) {
             return "";
         }
