@@ -25,7 +25,7 @@ public class AutoCompleter {
 
         // Multiple completions - cycle through them
         int index = (tabCount - 1) % currentCompletions.size();
-        return currentCompletions.get(index) + " ";
+        return currentCompletions.get(index);
     }
 
     private static List<String> getCompletionOptions(String prefix) {
