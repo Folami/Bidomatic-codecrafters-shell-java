@@ -43,7 +43,7 @@ public class Main {
             if (line.contains("\t")) {
                 tabPressCount++;
                 String textBeforeTab = line.substring(0, line.indexOf('\t'));
-                String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);  
+                String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount).trim();
                 // Clear the current line and print the new one
                 System.out.print("\r");              // Move to start of line
                 System.out.print("\033[K");          // Clear line
