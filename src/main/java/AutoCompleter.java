@@ -35,7 +35,7 @@ public class AutoCompleter {
             }
         }
         if (currentTabCount < completionOptions.size()) {
-            return completionOptions.get(tabCount++);
+            return completionOptions.get(currentTabCount++).toString() + " ";
         }
         completionState = 0;
         return null;
