@@ -20,7 +20,7 @@ public class AutoCompleter {
 
         // Single completion - return with space
         if (currentCompletions.size() == 1) {
-            return currentCompletions.get(0) + " ";
+            return currentCompletions.get(0);
         }
 
         // Multiple completions - cycle through them
