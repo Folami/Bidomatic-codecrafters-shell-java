@@ -35,21 +35,27 @@ public class Main {
         System.out.print("$ ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            String input = reader.readLine();
-            if (input == null) {
-                return null;
+            StringBuilder input = new StringBuilder();
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    return null;
+                }
+                // Handle tab completion
+                if (line.contains("\t")) {
+                    tabPressCount++;
+                    String textBeforeTab = line.substring(0, line.indexOf('\t'));
+                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
+                    // Overwrite the current line with the prompt and completed text.
+                    System.out.print("\r$ " + completedText);
+                    input.append(completedText);
+                } else {
+                    tabPressCount = 0;
+                    input.append(line);
+                    break;
+                }
             }
-            // Handle tab completion
-            if (input.contains("\t")) {
-                tabPressCount++;
-                String textBeforeTab = input.substring(0, input.indexOf('\t'));
-                String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
-                // Overwrite the current line with the prompt and completed text.
-                System.out.print("\r$ " + completedText);
-                return completedText;
-            }
-            tabPressCount = 0;
-            return input;
+            return input.toString();
         } catch (IOException e) {
             return null;
         }
