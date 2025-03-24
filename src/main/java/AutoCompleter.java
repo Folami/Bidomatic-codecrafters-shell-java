@@ -3,13 +3,49 @@ import java.util.*;
 public class AutoCompleter {
     // Builtin commands to autocomplete.
     private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
-
-    // Returns a list of builtin commands that start with the given prefix.
+    private static int completionState = 0;
+    private static List<String> completionOptions = new ArrayList<>();
+    
+    // Setup function which could be expanded as needed.
+    public static void setupAutocomplete() {
+        // In our simple case, the builtins are hard-coded.
+        // More initialization logic could go here.
+    }
+    
+    // Called when the user presses the <TAB> key. This function simulates the complete() function in main.py.
+    public static String complete(String text, int currentTabCount) {
+        if (currentTabCount == 0) {
+            completionState += 1;
+            completionOptions = getCompletionOptions(text);
+            if (completionOptions.size() > 1) {
+                String commonPrefix = getCommonPrefix(completionOptions);
+                if (commonPrefix != text) {
+                    return commonPrefix + " ";
+                }
+                if (completionState == 1) {
+                    // Ring the bell.
+                    System.out.print("\007");
+                    return null;   
+                } else if (completionState == 2) {
+                    System.out.println("\n" + completionOptions);
+                    System.out.print("$ " + text);
+                    completionState = 0;
+                    return null;
+                }
+            }
+        }
+        if (currentTabCount < completionOptions.size()) {
+            return completionOptions.get(currentTabCount++).toString() + " ";
+        }
+        completionState = 0;
+        return null;
+    }
+    
+    // Simulates _get_completion_options() in main.py: returns a list of builtin commands that start with the given prefix.
     private static List<String> getCompletionOptions(String prefix) {
         List<String> options = new ArrayList<>();
-        String trimmed = prefix.trim();
         for (String builtin : BUILTINS) {
-            if (builtin.startsWith(trimmed)) {
+            if (builtin.startsWith(prefix.trim())) {
                 options.add(builtin);
             }
         }
@@ -17,48 +53,20 @@ public class AutoCompleter {
         return options;
     }
 
-    // Returns the common prefix among all strings in the list.
+    // Simulates _get_common_prefix() in main.py: returns the common prefix of a list of strings.
     private static String getCommonPrefix(List<String> strings) {
         if (strings.isEmpty()) {
             return "";
         }
-        String prefix = strings.get(0);
+        String first = strings.get(0);
         for (int i = 1; i < strings.size(); i++) {
-            String s = strings.get(i);
+            String other = strings.get(i);
             int j = 0;
-            while (j < prefix.length() && j < s.length() && prefix.charAt(j) == s.charAt(j)) {
+            while (j < first.length() && j < other.length() && first.charAt(j) == other.charAt(j)) {
                 j++;
             }
-            prefix = prefix.substring(0, j);
+            first = first.substring(0, j);
         }
-        return prefix;
-    }
-
-    // Mimics the Python complete() function.
-    // tabPressCount: the number of times Tab has been pressed on the same prefix.
-    public static String complete(String text, int tabPressCount) {
-        List<String> options = getCompletionOptions(text);
-        if (options.isEmpty()) {
-            return text;
-        }
-        // If there's exactly one match, return it with a trailing space if it's a builtin.
-        if (options.size() == 1) {
-            String option = options.get(0);
-            return BUILTINS.contains(option) ? option + " " : option;
-        }
-        // If multiple matches exist, compute the common prefix.
-        String common = getCommonPrefix(options);
-        if (common.length() > text.length()) {
-            return common + " ";
-        }
-        // Otherwise, cycle through the available completions.
-        int index = (tabPressCount - 1) % options.size();
-        String option = options.get(index);
-        return BUILTINS.contains(option) ? option + " " : option;
-    }
-
-    // (Optional) Setup initialization if needed.
-    public static void setupAutocomplete() {
-        // In our simple case, the builtins are hard-coded.
+        return first;
     }
 }
