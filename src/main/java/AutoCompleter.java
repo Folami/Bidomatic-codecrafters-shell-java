@@ -1,9 +1,10 @@
 import java.util.*;
 
+
+
 public class AutoCompleter {
     // Builtin commands to autocomplete.
-    private static final List<String> BUILTINS = Arrays.asList("echo", "exit");
-    
+    private static final List<String> BUILTINS = Arrays.asList("echo", "exit", "type", "pwd", "cd");
     private static String lastInput = "";
     private static List<String> currentCompletions = new ArrayList<>();
 

@@ -47,33 +47,27 @@ public class Main {
                 if (inputChar == '\t') {
                     tabPressCount++;
                     String textBeforeTab = currentInput.toString();
-                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount).trim();
+                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount); // Remove .trim()
 
-                    // Clear the current line and print the new one
-                    System.out.print("\r");              // Move to start of line
-                    System.out.print("\033[K");          // Clear line
-                    System.out.print("$ " + completedText);
+                    // Clear and rewrite the line
+                    System.out.print("\r$ " + completedText); // Rewrite prompt with completed text
+                    System.out.print("\033[K");               // Clear remaining line content
                     System.out.flush();
 
                     currentInput.setLength(0);
                     currentInput.append(completedText);
-
-
                 } else if (inputChar == '\n') {
                     tabPressCount = 0;
                     String finalInput = currentInput.toString();
                     System.out.println(); // Newline after command
                     return finalInput;
-                }
-                 else if (inputChar == 8) { // Backspace (ASCII 8)
+                } else if (inputChar == 8) { // Backspace (ASCII 8)
                     if (currentInput.length() > 0) {
                         currentInput.deleteCharAt(currentInput.length() - 1);
-                        // Update console to reflect backspace
-                        System.out.print("\r$ " + currentInput.toString() + " \033[K"); // Add space and clear to overwrite last char
+                        System.out.print("\r$ " + currentInput.toString() + " \033[K");
                         System.out.flush();
                     }
-                }
-                else {
+                } else {
                     System.out.print(inputChar);
                     System.out.flush();
                     currentInput.append(inputChar);
