@@ -47,21 +47,24 @@ public class Main {
                 if (inputChar == '\t') {
                     tabPressCount++;
                     String textBeforeTab = currentInput.toString();
-                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount); // Remove .trim()
+                    String completedText = AutoCompleter.complete(textBeforeTab, tabPressCount);
+                    // Debug: Verify completedText
+                    System.err.println("DEBUG: completedText = '" + completedText + "'");
 
-                    // Clear and rewrite the line
-                    System.out.print("\r$ " + completedText); // Rewrite prompt with completed text
-                    System.out.print("\033[K");               // Clear remaining line content
+                    // Clear and rewrite
+                    System.out.print("\r$ " + completedText);
+                    System.out.print("\033[K");
                     System.out.flush();
 
                     currentInput.setLength(0);
                     currentInput.append(completedText);
+
                 } else if (inputChar == '\n') {
                     tabPressCount = 0;
                     String finalInput = currentInput.toString();
-                    System.out.println(); // Newline after command
+                    System.out.println();
                     return finalInput;
-                } else if (inputChar == 8) { // Backspace (ASCII 8)
+                } else if (inputChar == 8) { // Backspace
                     if (currentInput.length() > 0) {
                         currentInput.deleteCharAt(currentInput.length() - 1);
                         System.out.print("\r$ " + currentInput.toString() + " \033[K");
